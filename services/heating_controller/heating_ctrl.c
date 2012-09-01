@@ -34,7 +34,7 @@
 int16_t
 heating_ctrl_init(void)
 {
-  APPSAMPLEDEBUG ("init\n");
+	HEATINGCTRLDEBUG ("init\n");
   // enter your code here
 
   return ECMD_FINAL_OK;
@@ -47,7 +47,7 @@ heating_ctrl_init(void)
 int16_t
 heating_ctrl_periodic(void)
 {
-  APPSAMPLEDEBUG ("periodic\n");
+	HEATINGCTRLDEBUG ("periodic\n");
   // enter your code here
 
   return ECMD_FINAL_OK;
@@ -60,7 +60,7 @@ heating_ctrl_periodic(void)
 */
 int16_t
 heating_ctrl_onrequest(char *cmd, char *output, uint16_t len){
-  APPSAMPLEDEBUG ("main\n");
+	HEATINGCTRLDEBUG ("main\n");
   // enter your code here
 
   return ECMD_FINAL_OK;
@@ -68,7 +68,7 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len){
 
 /*
   -- Ethersex META --
-  header(services/heating_ctrl/heating_ctrl.h)
+  header(services/heating_controller/heating_ctrl.h)
   ifdef(`conf_HEATING_CTRL_INIT_AUTOSTART',`init(heating_ctrl_init)')
   ifdef(`conf_HEATING_CTRL_PERIODIC_AUTOSTART',`timer(100,heating_ctrl_periodic())')
 */
