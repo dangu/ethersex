@@ -92,6 +92,7 @@ SUBDIRS += services/dmx-storage
 SUBDIRS += services/dmx-fxslot
 SUBDIRS += services/echo
 SUBDIRS += services/freqcount
+SUBDIRS += services/heating_controller
 SUBDIRS += services/pam
 SUBDIRS += services/httpd
 SUBDIRS += services/jabber
