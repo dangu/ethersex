@@ -31,6 +31,8 @@ heating_ctrl_init(void);
 int16_t
 heating_ctrl_periodic(void);
 
+int16_t
+pid_controller(int16_t tTarget, int16_t tMeasured);
 
 #include "config.h"
 #ifdef DEBUG_HEATING_CTRL

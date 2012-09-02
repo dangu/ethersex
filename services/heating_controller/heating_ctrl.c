@@ -26,6 +26,8 @@
 #include "config.h"
 #include "heating_ctrl.h"
 
+#include "hardware/onewire/onewire.h"
+
 #include "protocols/ecmd/ecmd-base.h"
 
 /*
@@ -42,13 +44,54 @@ heating_ctrl_init(void)
 
 /*
   If enabled in menuconfig, this function is periodically called
-  change "timer(100,app_sample_periodic)" if needed
+  change "timer(1000,heating_ctrl_periodic)" if needed
+
+  Sensors:
+  "a":["105602a501080011",
+		"Radiatorer, tillopp"],
+"tIn":["28dbfa7102000051",
+		  "Inomhus, nere"],
+"d":["10d136a5010800e5",
+	"Ventilation, uteluft"],
 */
 int16_t
 heating_ctrl_periodic(void)
 {
-	HEATINGCTRLDEBUG ("periodic\n");
-  // enter your code here
+	int16_t	tIndoor, tOutdoor, tRad; // Measured temperatures
+	int16_t tTargetIndoor, tTargetRad; // Target temperatures
+	int16_t uShunt;
+
+	int8_t ret;
+	//const ow_rom_code_t romSensorRad = {0x105602a501080011};
+	ow_rom_code_t romSensorRad;
+	HEATINGCTRLDEBUG("periodic\n");
+	romSensorRad.raw = 0x105602a501080011;
+	tTargetRad = 40;
+	ret=ow_temp_start_convert_wait(&romSensorRad)
+	HEATINGCTRLDEBUG("conv %d\n",ret);
+
+	ow_temp_scratchpad_t sp;
+	ret = ow_temp_read_scratchpad(&romSensorRad, &sp);
+
+	if (ret != 1)
+	{
+	HEATINGCTRLDEBUG("scratchpad read failed: %d\n", ret);
+	}
+	else{	HEATINGCTRLDEBUG("successfully read scratchpad\n");
+
+	}
+
+    //self.s.send("1w convert" + "\n")
+    //self.s.send("1w get " + sensorID + "\n")
+    //response = float(self.s.recv(1024).rstrip("\n").lstrip())
+
+	//tRad =
+	uShunt = pid_controller(tTargetRad, tRad);
+	HEATINGCTRLDEBUG("uShunt: %d\n", uShunt);
+	//setPWM(uShunt);
+
+
+
 
   return ECMD_FINAL_OK;
 }
@@ -67,8 +110,18 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len){
 }
 
 /*
+ * This is an implementation of a PID (proportional, integral, derivative) controller
+ *
+ */
+int16_t
+pid_controller(int16_t tTarget, int16_t tMeasured){
+	return (tTarget-tMeasured) + 127;
+}
+
+
+/*
   -- Ethersex META --
   header(services/heating_controller/heating_ctrl.h)
   ifdef(`conf_HEATING_CTRL_INIT_AUTOSTART',`init(heating_ctrl_init)')
-  ifdef(`conf_HEATING_CTRL_PERIODIC_AUTOSTART',`timer(100,heating_ctrl_periodic())')
+  ifdef(`conf_HEATING_CTRL_PERIODIC_AUTOSTART',`timer(1000,heating_ctrl_periodic())')
 */
