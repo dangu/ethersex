@@ -38,6 +38,8 @@ pid_controller(int16_t tTarget, int16_t tMeasured);
 #ifdef DEBUG_HEATING_CTRL
 # include "core/debug.h"
 # define HEATINGCTRLDEBUG(a...)  debug_printf("heating ctrl: " a)
+//#define HEATINGCTRLDEBUG(s, args...) printf_P(PSTR("D: " s), ## args)
+
 #else
 # define HEATINGCTRLDEBUG(a...)
 #endif

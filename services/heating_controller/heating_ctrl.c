@@ -67,8 +67,8 @@ heating_ctrl_periodic(void)
 	HEATINGCTRLDEBUG("periodic\n");
 	romSensorRad.raw = 0x105602a501080011;
 	tTargetRad = 40;
-	ret=ow_temp_start_convert_wait(&romSensorRad)
-	HEATINGCTRLDEBUG("conv %d\n",ret);
+	ret=ow_temp_start_convert_wait(&romSensorRad);
+	HEATINGCTRLDEBUG ("conv %d\n",ret);
 
 	ow_temp_scratchpad_t sp;
 	ret = ow_temp_read_scratchpad(&romSensorRad, &sp);
@@ -104,6 +104,7 @@ heating_ctrl_periodic(void)
 int16_t
 heating_ctrl_onrequest(char *cmd, char *output, uint16_t len){
 	HEATINGCTRLDEBUG ("main\n");
+	heating_ctrl_periodic();
   // enter your code here
 
   return ECMD_FINAL_OK;
