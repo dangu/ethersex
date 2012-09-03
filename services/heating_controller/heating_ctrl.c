@@ -56,8 +56,20 @@ heating_ctrl_init(void)
 "d":["10d136a5010800e5",
         "Ventilation, uteluft"],
  */
-int16_t
+
+static int16_t periodicCounter=0;
+
+void
 heating_ctrl_periodic(void)
+{
+
+
+      HEATINGCTRLDEBUG("Counter: %d\n",periodicCounter++);
+
+
+}
+int16_t
+heating_ctrl_controller(void)
 {
         int16_t	tIndoor, tOutdoor, tRad; // Measured temperatures
         int16_t tTargetIndoor, tTargetRad; // Target temperatures
@@ -140,10 +152,9 @@ pid_controller(int16_t tTarget, int16_t tMeasured){
         return (tTarget-tMeasured) + 127;
 }
 
-
 /*
   -- Ethersex META --
   header(services/heating_controller/heating_ctrl.h)
-  ifdef(`conf_HEATING_CTRL_INIT_AUTOSTART',`init(heating_ctrl_init)')
-  ifdef(`conf_HEATING_CTRL_PERIODIC_AUTOSTART',`timer(500,heating_ctrl_periodic())')
+  init(heating_ctrl_init)
+  timer(500,heating_ctrl_periodic())
  */
