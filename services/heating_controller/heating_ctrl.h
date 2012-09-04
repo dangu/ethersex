@@ -19,6 +19,9 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
+#include <stdint.h>
+#include "hardware/onewire/onewire.h"
+
 #ifndef HAVE_HEATINGCTRL_H
 #define HAVE_HEATINGCTRL_H
 
@@ -36,6 +39,34 @@ heating_ctrl_controller(void);
 
 int16_t
 pid_controller(int16_t tTarget, int16_t tMeasured);
+
+/* This struct contains the parameters as well as the state of the
+ * PID controller
+ */
+typedef struct {
+  // Parameters
+  int16_t Pgain;
+  int16_t Igain;
+  int16_t uMin;
+  int16_t uMax;
+
+  // States
+  int16_t I;
+  int16_t u;
+
+} pidData_t;
+
+/* Temperature sensor data
+ * This struct contains the rom ID of the 1w sensor as well as the
+ * signal
+ */
+
+typedef struct
+{
+  ow_rom_code_t rom;
+  int16_t signal;
+
+} sensor_data_t;
 
 #include "config.h"
 #ifdef DEBUG_HEATING_CTRL

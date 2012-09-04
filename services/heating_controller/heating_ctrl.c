@@ -32,16 +32,35 @@
 
 #include "protocols/ecmd/ecmd-base.h"
 
+static int16_t periodicCounter=0;
+
+static pidData_t pidDataRoom, pidDataRad;
+
 /*
   If enabled in menuconfig, this function is called during boot up of ethersex
  */
 int16_t
 heating_ctrl_init(void)
 {
-        HEATINGCTRLDEBUG ("init\n");
-        // enter your code here
+  HEATINGCTRLDEBUG ("init\n");
 
-        return ECMD_FINAL_OK;
+  // Init room temperature controller parameter
+  pidDataRoom.I = 0;
+  pidDataRoom.Igain = 1;
+  pidDataRoom.Pgain = 1;
+  pidDataRoom.u = 20;
+  pidDataRoom.uMax = 70;
+  pidDataRoom.uMin = 15;
+
+  // Init radiator temperature controller parameter
+  pidDataRad.I = 0;
+  pidDataRad.Igain = 1;
+  pidDataRad.Pgain = 1;
+  pidDataRad.u = 0;
+  pidDataRad.uMax = 255;
+  pidDataRad.uMin = 0;
+
+  return ECMD_FINAL_OK;
 }
 
 /*
@@ -57,7 +76,6 @@ heating_ctrl_init(void)
         "Ventilation, uteluft"],
  */
 
-static int16_t periodicCounter=0;
 
 void
 heating_ctrl_periodic(void)
@@ -65,8 +83,13 @@ heating_ctrl_periodic(void)
 
 
       HEATINGCTRLDEBUG("Counter: %d\n",periodicCounter++);
+      heating_ctrl_controller();
 
 
+}
+int16_t
+get_sensor(void){
+  return 0;
 }
 int16_t
 heating_ctrl_controller(void)
