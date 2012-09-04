@@ -47,8 +47,8 @@ parse_cmd_heating_ctrl_periodic(char *cmd, char *output, uint16_t len)
 
 /*
 -- Ethersex META --
-block([[Heating_Controller]])
-ecmd_feature(heating_ctrl_command, "heating",, Manually call heating_ctrl commands)
+block(Heating_Controller)
+ecmd_feature(heating_ctrl_command, "heating",[degC*16], Set target room temp in degC*16)
 ecmd_feature(heating_ctrl_init, "heating_init",, Manually call heating_ctrl init method)
 ecmd_feature(heating_ctrl_periodic, "heating_periodic",, Manually call heating_ctrl periodic method)
 */

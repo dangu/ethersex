@@ -37,6 +37,8 @@ static int16_t periodicCounter = 0;
 static pidData_t pidDataRoom, pidDataRad;
 static sensor_data_t sensors[N_SENSORS];
 
+static int16_t tTargetRoom=T_RES(20);
+
 /*
   If enabled in menuconfig, this function is called during boot up of ethersex
  */
@@ -132,7 +134,7 @@ get_sensor(sensor_data_t * sensor)
 int16_t
 heating_ctrl_controller(void)
 {
-  static int16_t tTargetRoom=T_RES(20), tTargetRad=T_RES(20);    // Target temperatures
+  static int16_t tTargetRad=T_RES(20);    // Target temperatures
   int16_t uShunt, tRadMaxDynamic;
 
   uint16_t i;
@@ -186,11 +188,35 @@ heating_ctrl_controller(void)
 int16_t
 heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
 {
-  int16_t ret;
+  int16_t ret=0;
+  uint8_t tTarget;
+
   HEATINGCTRLDEBUG("onrequest\n");
   // enter your code here
-  ret = snprintf_P(output, len, PSTR("len=%d Room:I=%d Rad:I%d"),len,pidDataRoom.I,pidDataRad.I);
-  return ECMD_FINAL_OK;
+  ret = sscanf_P(cmd, PSTR("%hhu"), &tTarget);
+  if(ret==1)
+    {
+    // Found a number
+    if((10<tTarget) && (tTarget<25))
+      {
+      // Sane value
+      tTargetRoom = (int16_t)T_RES(tTarget);
+      }
+    else
+      {
+        return ECMD_ERR_PARSE_ERROR;
+      }
+    ret = snprintf_P(output, len, PSTR("Set new target to %d degC"),tTarget);
+  }
+  else
+    {
+      ret = snprintf_P(output, len, PSTR("%d %d %d I%d I%d uS%d"),
+          sensors[SENSOR_T_OUT].signal>>4,
+          sensors[SENSOR_T_ROOM].signal>>4,
+          sensors[SENSOR_T_RAD].signal>>4,
+          pidDataRoom.I,pidDataRad.I,pidDataRad.u);
+    }
+  return ECMD_FINAL(ret);
 }
 
 /*
