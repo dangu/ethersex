@@ -100,11 +100,11 @@ get_sensor(sensor_data_t * sensor)
 
   romPtr = &sensor->rom;
 
-  HEATINGCTRLDEBUG("*romPtr 0x%x%x%x\n", romPtr->bytewise[0],
-                   romPtr->bytewise[1], romPtr->bytewise[2]);
+  //HEATINGCTRLDEBUG("*romPtr 0x%x%x%x\n", romPtr->bytewise[0],
+  //                 romPtr->bytewise[1], romPtr->bytewise[2]);
 
   ret = ow_temp_start_convert_wait(romPtr);
-  HEATINGCTRLDEBUG("conv %d\n", ret);
+  //HEATINGCTRLDEBUG("conv %d\n", ret);
 
   ow_temp_scratchpad_t sp;
   ret = ow_temp_read_scratchpad(romPtr, &sp);
@@ -115,17 +115,14 @@ get_sensor(sensor_data_t * sensor)
   }
   else
   {
-    HEATINGCTRLDEBUG("successfully read scratchpad\n");
+    //HEATINGCTRLDEBUG("successfully read scratchpad\n");
 
 
-    int16_t temp = ow_temp_normalize(romPtr, &sp);
+      sensor->signal = ow_temp_normalize(romPtr, &sp)>>4;
 
-    HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp),
-                     LO8(temp) > 0 ? 5 : 0);
-    HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp),
-                     HI8(((temp & 0x00ff) * 10) + 0x80));
+    //HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp),
+    //                 HI8(((temp & 0x00ff) * 10) + 0x80));
 
-    sensor->signal = temp;
 
   }
 
@@ -136,27 +133,26 @@ get_sensor(sensor_data_t * sensor)
 int16_t
 heating_ctrl_controller(void)
 {
-  int16_t tIndoor, tOutdoor, tRad;      // Measured temperatures
-  int16_t tTargetIndoor, tTargetRad;    // Target temperatures
+  static int16_t tTargetIndoor=20<<4, tTargetRad=40<<4;    // [degC*16] Target temperatures
   int16_t uShunt;
 
   uint16_t i;
 
   int16_t ret;
-  HEATINGCTRLDEBUG("reading %d sensors\n", sizeof(sensors));
+
+  // Read all sensors
   for (i = 0; i < N_SENSORS; i++)
-    ret = get_sensor(&sensors[i]);
-/*
-        tTargetRad = 40;
-         tRad = HI8(temp);
-        uShunt = pid_controller(tTargetRad, tRad);
-
-        HEATINGCTRLDEBUG("uShunt: %d\n", uShunt);
-
-        setpwm('b',(uint8_t) uShunt);
+      ret = get_sensor(&sensors[i]);
 
 
-        }*/
+  uShunt = pid_controller(&pidDataRad, tTargetRad, &sensors[SENSOR_T_RAD]);
+
+  HEATINGCTRLDEBUG("uShunt: %d\n", uShunt);
+
+  setpwm('b',(uint8_t) uShunt);
+
+
+
 
   return ECMD_FINAL_OK;
 }
@@ -181,9 +177,45 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
  *
  */
 int16_t
-pid_controller(int16_t tTarget, int16_t tMeasured)
+pid_controller(pidData_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr)
 {
-  return (tTarget - tMeasured) + 127;
+
+//         self.I = self.I + self.I_GAIN*err*dt
+  int16_t e,P, u, uLim;
+
+  e = tTarget-sensorPtr->signal;
+  HEATINGCTRLDEBUG("PID: e=%d-%d=%d sens>>4=%d ", tTarget,sensorPtr->signal,e,sensorPtr->signal>>4);
+
+  P = e*pPtr->Pgain;
+  ctrl_printf("P=%d ", P);
+
+  pPtr->I = pPtr->I + e*pPtr->Igain;
+  ctrl_printf("I=%d ", pPtr->I);
+
+  u = (P + pPtr->I)>>4;
+  ctrl_printf("u=%d ", u);
+
+  if(u > pPtr->uMax)
+    {
+      uLim = pPtr->uMax;
+    }
+  else if(u < pPtr->uMin)
+    {
+      uLim =pPtr->uMin;
+    }
+  else
+    {
+      uLim = u;
+    }
+
+  pPtr->I = pPtr->I - ((u - uLim)<<4);
+  ctrl_printf("Ilim=%d\n", pPtr->I);
+
+
+
+
+
+  return uLim;
 }
 
 /*

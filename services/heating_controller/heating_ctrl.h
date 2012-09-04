@@ -25,16 +25,6 @@
 #ifndef HAVE_HEATINGCTRL_H
 #define HAVE_HEATINGCTRL_H
 
-int16_t heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
-
-void heating_ctrl_init(void);
-
-void heating_ctrl_periodic(void);
-
-int16_t heating_ctrl_controller(void);
-
-int16_t pid_controller(int16_t tTarget, int16_t tMeasured);
-
 /* This struct contains the parameters as well as the state of the
  * PID controller
  */
@@ -72,14 +62,29 @@ typedef struct
 #define SENSOR_T_OUT 2
 
 
+
+int16_t heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
+
+void heating_ctrl_init(void);
+
+void heating_ctrl_periodic(void);
+
+int16_t heating_ctrl_controller(void);
+
+int16_t pid_controller(pidData_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr);
+
+
 #include "config.h"
 #ifdef DEBUG_HEATING_CTRL
 # include "core/debug.h"
 # define HEATINGCTRLDEBUG(a...)  debug_printf("heating ctrl: " a)
 //#define HEATINGCTRLDEBUG(s, args...) printf_P(PSTR("D: " s), ## args)
 
+#define ctrl_printf(s, args...) printf_P(PSTR(s), ## args)
+
 #else
 # define HEATINGCTRLDEBUG(a...)
+#define ctrl_printf(s, args...)
 #endif
 
 #endif /* HAVE_HEATINGCTRL_H */
