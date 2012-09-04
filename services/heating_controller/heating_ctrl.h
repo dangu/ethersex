@@ -28,7 +28,7 @@
 int16_t
 heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
 
-int16_t
+void
 heating_ctrl_init(void);
 
 void
@@ -67,6 +67,14 @@ typedef struct
   int16_t signal;
 
 } sensor_data_t;
+
+// Sensors
+#define N_SENSORS 3
+
+#define SENSOR_T_IN 0
+#define SENSOR_T_RAD 1
+#define SENSOR_T_OUT 2
+
 
 #include "config.h"
 #ifdef DEBUG_HEATING_CTRL

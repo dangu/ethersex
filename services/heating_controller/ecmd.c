@@ -34,7 +34,7 @@ int16_t parse_cmd_heating_ctrl_command(char *cmd, char *output, uint16_t len)
 
 int16_t parse_cmd_heating_ctrl_init(char *cmd, char *output, uint16_t len)
 {
-  return heating_ctrl_init();
+  return 0;
 }
 
 int16_t parse_cmd_heating_ctrl_periodic(char *cmd, char *output, uint16_t len)

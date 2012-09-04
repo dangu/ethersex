@@ -35,11 +35,12 @@
 static int16_t periodicCounter=0;
 
 static pidData_t pidDataRoom, pidDataRad;
+static sensor_data_t sensors[N_SENSORS];
 
 /*
   If enabled in menuconfig, this function is called during boot up of ethersex
  */
-int16_t
+void
 heating_ctrl_init(void)
 {
   HEATINGCTRLDEBUG ("init\n");
@@ -60,14 +61,7 @@ heating_ctrl_init(void)
   pidDataRad.uMax = 255;
   pidDataRad.uMin = 0;
 
-  return ECMD_FINAL_OK;
-}
-
-/*
-  If enabled in menuconfig, this function is periodically called
-  change "timer(1000,heating_ctrl_periodic)" if needed
-
-  Sensors:
+  /* Sensor rom init
   "a":["105602a501080011",
                 "Radiatorer, tillopp"],
 "tIn":["28dbfa7102000051",
@@ -75,7 +69,16 @@ heating_ctrl_init(void)
 "d":["10d136a5010800e5",
         "Ventilation, uteluft"],
  */
+  sensors[SENSOR_T_IN].rom.raw = 0x5100000271fadb28;
+  sensors[SENSOR_T_RAD].rom.raw = 0x11000801a5025610;
+  sensors[SENSOR_T_OUT].rom.raw = 0xe5000801a536d110;
 
+}
+
+/*
+  If enabled in menuconfig, this function is periodically called
+  change "timer(1000,heating_ctrl_periodic)" if needed
+*/
 
 void
 heating_ctrl_periodic(void)
@@ -88,7 +91,39 @@ heating_ctrl_periodic(void)
 
 }
 int16_t
-get_sensor(void){
+get_sensor(sensor_data_t *sensor){
+
+  int8_t ret;
+  ow_rom_code_t *romPtr;
+
+  romPtr = &sensor->rom;
+
+  HEATINGCTRLDEBUG("*romPtr 0x%x%x%x\n",romPtr->bytewise[0],
+      romPtr->bytewise[1],romPtr->bytewise[2]);
+
+  ret=ow_temp_start_convert_wait(romPtr);
+  HEATINGCTRLDEBUG ("conv %d\n",ret);
+
+  ow_temp_scratchpad_t sp;
+  ret = ow_temp_read_scratchpad(romPtr, &sp);
+
+  if (ret != 1)
+  {
+         HEATINGCTRLDEBUG("scratchpad read failed: %d\n", ret);
+  }
+  else{   HEATINGCTRLDEBUG("successfully read scratchpad\n");
+
+
+  int16_t temp = ow_temp_normalize(romPtr, &sp);
+
+  HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp), LO8(temp) > 0 ? 5 : 0);
+  HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp), HI8(((temp & 0x00ff) * 10) + 0x80));
+
+  sensor->signal = temp;
+
+  }
+
+
   return 0;
 }
 int16_t
@@ -97,49 +132,16 @@ heating_ctrl_controller(void)
         int16_t	tIndoor, tOutdoor, tRad; // Measured temperatures
         int16_t tTargetIndoor, tTargetRad; // Target temperatures
         int16_t uShunt;
-        uint8_t addr[8] = {0x10,0x56,0x02,0xa5,0x01,0x08,0x00,0x11};
 
         uint16_t i;
 
-        int8_t ret;
-
-
-        ow_rom_code_t romSensorRad;
-        HEATINGCTRLDEBUG("Sensor address:\n");
-        HEATINGCTRLDEBUG("Test: 0x%x\n",0x23);
-        for(i=0;i<8;i++){
-                romSensorRad.bytewise[i] = addr[i];
-        }
-        //romSensorRad.raw = 0x105602a501080011;
-        for(i=0;i<8;i++){
-                HEATINGCTRLDEBUG ("%x%x",romSensorRad.bytewise[i],addr[i]);
-        }
-        HEATINGCTRLDEBUG("\n");
-
+        int16_t ret;
+        HEATINGCTRLDEBUG ("reading %d sensors\n",sizeof(sensors));
+        for(i=0;i<N_SENSORS;i++)
+          ret=get_sensor(&sensors[i]);
+/*
         tTargetRad = 40;
-        ret=ow_temp_start_convert_wait(&romSensorRad);
-        HEATINGCTRLDEBUG ("conv %d\n",ret);
-
-        ow_temp_scratchpad_t sp;
-        ret = ow_temp_read_scratchpad(&romSensorRad, &sp);
-
-        if (ret != 1)
-        {
-                HEATINGCTRLDEBUG("scratchpad read failed: %d\n", ret);
-        }
-        else{	HEATINGCTRLDEBUG("successfully read scratchpad\n");
-
-
-        int16_t temp = ow_temp_normalize(&romSensorRad, &sp);
-
-        HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp), LO8(temp) > 0 ? 5 : 0);
-        HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp), HI8(((temp & 0x00ff) * 10) + 0x80));
-
-        //self.s.send("1w convert" + "\n")
-        //self.s.send("1w get " + sensorID + "\n")
-        //response = float(self.s.recv(1024).rstrip("\n").lstrip())
-
-        tRad = HI8(temp);
+         tRad = HI8(temp);
         uShunt = pid_controller(tTargetRad, tRad);
 
         HEATINGCTRLDEBUG("uShunt: %d\n", uShunt);
@@ -147,7 +149,7 @@ heating_ctrl_controller(void)
         setpwm('b',(uint8_t) uShunt);
 
 
-        }
+        }*/
 
         return ECMD_FINAL_OK;
 }
