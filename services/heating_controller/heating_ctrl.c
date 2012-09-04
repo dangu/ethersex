@@ -46,17 +46,17 @@ heating_ctrl_init(void)
   HEATINGCTRLDEBUG("init\n");
 
   // Init room temperature controller parameter
-  pidDataRoom.I = 0;
+  pidDataRoom.I = T_RES(20);     // Initial target rad temp
   pidDataRoom.Igain = 1;
   pidDataRoom.Pgain = 1;
   pidDataRoom.u = 20;
-  pidDataRoom.uMax = 70;
-  pidDataRoom.uMin = 15;
+  pidDataRoom.uMax = T_RES(40);  // Dynamically controlled!
+  pidDataRoom.uMin = T_RES(15);
 
   // Init radiator temperature controller parameter
   pidDataRad.I = 0;
   pidDataRad.Igain = 1;
-  pidDataRad.Pgain = 1;
+  pidDataRad.Pgain = 16;
   pidDataRad.u = 0;
   pidDataRad.uMax = 255;
   pidDataRad.uMin = 0;
@@ -69,7 +69,7 @@ heating_ctrl_init(void)
    * "d":["10d136a5010800e5",
    * "Ventilation, uteluft"],
    */
-  sensors[SENSOR_T_IN].rom.raw = 0x5100000271fadb28;
+  sensors[SENSOR_T_ROOM].rom.raw = 0x5100000271fadb28;
   sensors[SENSOR_T_RAD].rom.raw = 0x11000801a5025610;
   sensors[SENSOR_T_OUT].rom.raw = 0xe5000801a536d110;
 
@@ -103,7 +103,6 @@ get_sensor(sensor_data_t * sensor)
   //HEATINGCTRLDEBUG("*romPtr 0x%x%x%x\n", romPtr->bytewise[0],
   //                 romPtr->bytewise[1], romPtr->bytewise[2]);
 
-  ret = ow_temp_start_convert_wait(romPtr);
   //HEATINGCTRLDEBUG("conv %d\n", ret);
 
   ow_temp_scratchpad_t sp;
@@ -133,18 +132,40 @@ get_sensor(sensor_data_t * sensor)
 int16_t
 heating_ctrl_controller(void)
 {
-  static int16_t tTargetIndoor=20<<4, tTargetRad=40<<4;    // [degC*16] Target temperatures
-  int16_t uShunt;
+  static int16_t tTargetRoom=T_RES(20), tTargetRad=T_RES(20);    // Target temperatures
+  int16_t uShunt, tRadMaxDynamic;
 
   uint16_t i;
 
   int16_t ret;
 
   // Read all sensors
+  ret = ow_temp_start_convert_wait(NULL);
+
   for (i = 0; i < N_SENSORS; i++)
       ret = get_sensor(&sensors[i]);
 
+  // PID room temp
+  tTargetRad = pid_controller(&pidDataRoom, tTargetRoom, &sensors[SENSOR_T_ROOM]);
 
+
+  /*
+  * Do not try to set a radiator temp higher than the maximum
+  * available (especially if the tanks are empty). This should
+  * prevent windup and 70 deg temperature after the next fire
+    self.pidRoom.uMax = min(self.maxRadtemp, tRadMeasured + self.maxRadtempDiff)
+  */
+  tRadMaxDynamic = sensors[SENSOR_T_RAD].signal + MAX_RADTEMPDIFF;
+  if(MAX_RADTEMP>tRadMaxDynamic)
+    {
+    pidDataRad.uMax = tRadMaxDynamic;
+    }
+  else
+    {
+      pidDataRad.uMax = MAX_RADTEMP;
+    }
+
+  // PID radiator temp
   uShunt = pid_controller(&pidDataRad, tTargetRad, &sensors[SENSOR_T_RAD]);
 
   HEATINGCTRLDEBUG("uShunt: %d\n", uShunt);
@@ -165,10 +186,10 @@ heating_ctrl_controller(void)
 int16_t
 heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
 {
-  HEATINGCTRLDEBUG("main\n");
-  heating_ctrl_periodic();
+  int16_t ret;
+  HEATINGCTRLDEBUG("onrequest\n");
   // enter your code here
-
+  ret = snprintf_P(output, len, PSTR("len=%d Room:I=%d Rad:I%d"),len,pidDataRoom.I,pidDataRad.I);
   return ECMD_FINAL_OK;
 }
 

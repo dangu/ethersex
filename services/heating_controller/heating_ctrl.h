@@ -57,10 +57,15 @@ typedef struct
 // Sensors
 #define N_SENSORS 3
 
-#define SENSOR_T_IN 0
+#define SENSOR_T_ROOM 0
 #define SENSOR_T_RAD 1
 #define SENSOR_T_OUT 2
 
+// Parameters
+#define T_RES(x)  (x<<4)   // Temperature resolution (x<<4 -> 1/16 degC for example)
+
+#define MAX_RADTEMP T_RES(40)     // Do not try to set radiator temp higher than this
+#define MAX_RADTEMPDIFF T_RES(5)   // Do not try to increase radiator temp higher than this
 
 
 int16_t heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
