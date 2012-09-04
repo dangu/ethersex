@@ -32,7 +32,7 @@
 
 #include "protocols/ecmd/ecmd-base.h"
 
-static int16_t periodicCounter=0;
+static int16_t periodicCounter = 0;
 
 static pidData_t pidDataRoom, pidDataRad;
 static sensor_data_t sensors[N_SENSORS];
@@ -43,7 +43,7 @@ static sensor_data_t sensors[N_SENSORS];
 void
 heating_ctrl_init(void)
 {
-  HEATINGCTRLDEBUG ("init\n");
+  HEATINGCTRLDEBUG("init\n");
 
   // Init room temperature controller parameter
   pidDataRoom.I = 0;
@@ -62,13 +62,13 @@ heating_ctrl_init(void)
   pidDataRad.uMin = 0;
 
   /* Sensor rom init
-  "a":["105602a501080011",
-                "Radiatorer, tillopp"],
-"tIn":["28dbfa7102000051",
-                  "Inomhus, nere"],
-"d":["10d136a5010800e5",
-        "Ventilation, uteluft"],
- */
+   * "a":["105602a501080011",
+   * "Radiatorer, tillopp"],
+   * "tIn":["28dbfa7102000051",
+   * "Inomhus, nere"],
+   * "d":["10d136a5010800e5",
+   * "Ventilation, uteluft"],
+   */
   sensors[SENSOR_T_IN].rom.raw = 0x5100000271fadb28;
   sensors[SENSOR_T_RAD].rom.raw = 0x11000801a5025610;
   sensors[SENSOR_T_OUT].rom.raw = 0xe5000801a536d110;
@@ -85,60 +85,67 @@ heating_ctrl_periodic(void)
 {
 
 
-      HEATINGCTRLDEBUG("Counter: %d\n",periodicCounter++);
-      heating_ctrl_controller();
+  HEATINGCTRLDEBUG("Counter: %d\n", periodicCounter++);
+  heating_ctrl_controller();
 
 
 }
+
 int16_t
-get_sensor(sensor_data_t *sensor){
+get_sensor(sensor_data_t * sensor)
+{
 
   int8_t ret;
   ow_rom_code_t *romPtr;
 
   romPtr = &sensor->rom;
 
-  HEATINGCTRLDEBUG("*romPtr 0x%x%x%x\n",romPtr->bytewise[0],
-      romPtr->bytewise[1],romPtr->bytewise[2]);
+  HEATINGCTRLDEBUG("*romPtr 0x%x%x%x\n", romPtr->bytewise[0],
+                   romPtr->bytewise[1], romPtr->bytewise[2]);
 
-  ret=ow_temp_start_convert_wait(romPtr);
-  HEATINGCTRLDEBUG ("conv %d\n",ret);
+  ret = ow_temp_start_convert_wait(romPtr);
+  HEATINGCTRLDEBUG("conv %d\n", ret);
 
   ow_temp_scratchpad_t sp;
   ret = ow_temp_read_scratchpad(romPtr, &sp);
 
   if (ret != 1)
   {
-         HEATINGCTRLDEBUG("scratchpad read failed: %d\n", ret);
+    HEATINGCTRLDEBUG("scratchpad read failed: %d\n", ret);
   }
-  else{   HEATINGCTRLDEBUG("successfully read scratchpad\n");
+  else
+  {
+    HEATINGCTRLDEBUG("successfully read scratchpad\n");
 
 
-  int16_t temp = ow_temp_normalize(romPtr, &sp);
+    int16_t temp = ow_temp_normalize(romPtr, &sp);
 
-  HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp), LO8(temp) > 0 ? 5 : 0);
-  HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp), HI8(((temp & 0x00ff) * 10) + 0x80));
+    HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp),
+                     LO8(temp) > 0 ? 5 : 0);
+    HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp),
+                     HI8(((temp & 0x00ff) * 10) + 0x80));
 
-  sensor->signal = temp;
+    sensor->signal = temp;
 
   }
 
 
   return 0;
 }
+
 int16_t
 heating_ctrl_controller(void)
 {
-        int16_t	tIndoor, tOutdoor, tRad; // Measured temperatures
-        int16_t tTargetIndoor, tTargetRad; // Target temperatures
-        int16_t uShunt;
+  int16_t tIndoor, tOutdoor, tRad;      // Measured temperatures
+  int16_t tTargetIndoor, tTargetRad;    // Target temperatures
+  int16_t uShunt;
 
-        uint16_t i;
+  uint16_t i;
 
-        int16_t ret;
-        HEATINGCTRLDEBUG ("reading %d sensors\n",sizeof(sensors));
-        for(i=0;i<N_SENSORS;i++)
-          ret=get_sensor(&sensors[i]);
+  int16_t ret;
+  HEATINGCTRLDEBUG("reading %d sensors\n", sizeof(sensors));
+  for (i = 0; i < N_SENSORS; i++)
+    ret = get_sensor(&sensors[i]);
 /*
         tTargetRad = 40;
          tRad = HI8(temp);
@@ -151,7 +158,7 @@ heating_ctrl_controller(void)
 
         }*/
 
-        return ECMD_FINAL_OK;
+  return ECMD_FINAL_OK;
 }
 
 /*
@@ -160,12 +167,13 @@ heating_ctrl_controller(void)
   Otherwise you can use this function for anything you like
  */
 int16_t
-heating_ctrl_onrequest(char *cmd, char *output, uint16_t len){
-        HEATINGCTRLDEBUG ("main\n");
-        heating_ctrl_periodic();
-        // enter your code here
+heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
+{
+  HEATINGCTRLDEBUG("main\n");
+  heating_ctrl_periodic();
+  // enter your code here
 
-        return ECMD_FINAL_OK;
+  return ECMD_FINAL_OK;
 }
 
 /*
@@ -173,8 +181,9 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len){
  *
  */
 int16_t
-pid_controller(int16_t tTarget, int16_t tMeasured){
-        return (tTarget-tMeasured) + 127;
+pid_controller(int16_t tTarget, int16_t tMeasured)
+{
+  return (tTarget - tMeasured) + 127;
 }
 
 /*

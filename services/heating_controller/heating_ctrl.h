@@ -25,25 +25,21 @@
 #ifndef HAVE_HEATINGCTRL_H
 #define HAVE_HEATINGCTRL_H
 
-int16_t
-heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
+int16_t heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
 
-void
-heating_ctrl_init(void);
+void heating_ctrl_init(void);
 
-void
-heating_ctrl_periodic(void);
+void heating_ctrl_periodic(void);
 
-int16_t
-heating_ctrl_controller(void);
+int16_t heating_ctrl_controller(void);
 
-int16_t
-pid_controller(int16_t tTarget, int16_t tMeasured);
+int16_t pid_controller(int16_t tTarget, int16_t tMeasured);
 
 /* This struct contains the parameters as well as the state of the
  * PID controller
  */
-typedef struct {
+typedef struct
+{
   // Parameters
   int16_t Pgain;
   int16_t Igain;
@@ -86,4 +82,4 @@ typedef struct
 # define HEATINGCTRLDEBUG(a...)
 #endif
 
-#endif  /* HAVE_HEATINGCTRL_H */
+#endif /* HAVE_HEATINGCTRL_H */
