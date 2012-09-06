@@ -37,7 +37,7 @@ static int16_t periodicCounter = 0;
 static pidData_t pidDataRoom, pidDataRad;
 static sensor_data_t sensors[N_SENSORS];
 
-static int16_t tTargetRoom=T_RES(20);
+static int16_t tTargetRoom=T_RES(21);
 
 /*
   If enabled in menuconfig, this function is called during boot up of ethersex
@@ -51,7 +51,7 @@ heating_ctrl_init(void)
   pidDataRoom.I = T_RES(20);     // Initial target rad temp
   pidDataRoom.Igain = 1;
   pidDataRoom.Pgain = 1;
-  pidDataRoom.u = 20;
+  pidDataRoom.u = T_RES(20);
   pidDataRoom.uMax = T_RES(40);  // Dynamically controlled!
   pidDataRoom.uMin = T_RES(15);
 
@@ -134,7 +134,7 @@ get_sensor(sensor_data_t * sensor)
 int16_t
 heating_ctrl_controller(void)
 {
-  static int16_t tTargetRad=T_RES(20);    // Target temperatures
+  static int16_t tTargetRad;    // Target temperatures
   int16_t uShunt, tRadMaxDynamic;
 
   uint16_t i;
@@ -147,8 +147,6 @@ heating_ctrl_controller(void)
   for (i = 0; i < N_SENSORS; i++)
       ret = get_sensor(&sensors[i]);
 
-  // PID room temp
-  tTargetRad = pid_controller(&pidDataRoom, tTargetRoom, &sensors[SENSOR_T_ROOM]);
 
 
   /*
@@ -160,12 +158,15 @@ heating_ctrl_controller(void)
   tRadMaxDynamic = sensors[SENSOR_T_RAD].signal + MAX_RADTEMPDIFF;
   if(MAX_RADTEMP>tRadMaxDynamic)
     {
-    pidDataRad.uMax = tRadMaxDynamic;
+    pidDataRoom.uMax = tRadMaxDynamic;
     }
   else
     {
-      pidDataRad.uMax = MAX_RADTEMP;
+     pidDataRoom.uMax = MAX_RADTEMP;
     }
+
+  // PID room temp
+   tTargetRad = pid_controller(&pidDataRoom, tTargetRoom, &sensors[SENSOR_T_ROOM]);
 
   // PID radiator temp
   uShunt = pid_controller(&pidDataRad, tTargetRad, &sensors[SENSOR_T_RAD]);
@@ -210,11 +211,11 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
   }
   else
     {
-      ret = snprintf_P(output, len, PSTR("%d %d %d I%d I%d uS%d"),
+      ret = snprintf_P(output, len, PSTR("%d %d %d I%d I%d uR%d uS%d"),
           sensors[SENSOR_T_OUT].signal>>4,
           sensors[SENSOR_T_ROOM].signal>>4,
           sensors[SENSOR_T_RAD].signal>>4,
-          pidDataRoom.I,pidDataRad.I,pidDataRad.u);
+          pidDataRoom.I,pidDataRad.I,pidDataRoom.u,pidDataRad.u);
     }
   return ECMD_FINAL(ret);
 }
@@ -228,7 +229,7 @@ pid_controller(pidData_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr)
 {
 
 //         self.I = self.I + self.I_GAIN*err*dt
-  int16_t e,P, u, uLim;
+  int16_t e,P, u;
 
   e = tTarget-sensorPtr->signal;
   HEATINGCTRLDEBUG("PID: e=%d-%d=%d sens>>4=%d ", tTarget,sensorPtr->signal,e,sensorPtr->signal>>4);
@@ -244,25 +245,25 @@ pid_controller(pidData_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr)
 
   if(u > pPtr->uMax)
     {
-      uLim = pPtr->uMax;
+      pPtr->u= pPtr->uMax;
     }
   else if(u < pPtr->uMin)
     {
-      uLim =pPtr->uMin;
+      pPtr->u =pPtr->uMin;
     }
   else
     {
-      uLim = u;
+      pPtr->u = u;
     }
 
-  pPtr->I = pPtr->I - ((u - uLim)<<4);
+  pPtr->I = pPtr->I - ((u - pPtr->u)<<4);
   ctrl_printf("Ilim=%d\n", pPtr->I);
 
 
 
 
 
-  return uLim;
+  return pPtr->u;
 }
 
 /*
