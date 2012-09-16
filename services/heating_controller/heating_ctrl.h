@@ -64,7 +64,7 @@ typedef struct
 // Parameters
 #define T_RES(x)  (x<<4)   // Temperature resolution (x<<4 -> 1/16 degC for example)
 
-#define MAX_RADTEMP T_RES(40)     // Do not try to set radiator temp higher than this
+#define MAX_RADTEMP T_RES(60)     // Do not try to set radiator temp higher than this
 #define MAX_RADTEMPDIFF T_RES(5)   // Do not try to increase radiator temp higher than this
 
 

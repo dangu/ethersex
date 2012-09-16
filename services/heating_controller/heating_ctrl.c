@@ -48,7 +48,7 @@ heating_ctrl_init(void)
   HEATINGCTRLDEBUG("init\n");
 
   // Init room temperature controller parameter
-  pidDataRoom.I = T_RES(20);     // Initial target rad temp
+  pidDataRoom.I = T_RES(T_RES(30));     // Initial target rad temp
   pidDataRoom.Igain = 1;
   pidDataRoom.Pgain = 1;
   pidDataRoom.u = T_RES(20);
