@@ -69,6 +69,10 @@
 #include "services/tanklevel/tanklevel.h"
 #endif
 
+#ifdef HEATING_CTRL_SUPPORT
+#include "services/heating_controller/heating_ctrl.h"
+#endif
+
 struct eeprom_config_t
 {
 #ifdef ETHERNET_SUPPORT
@@ -142,6 +146,10 @@ struct eeprom_config_t
 
 #ifdef TANKLEVEL_SUPPORT
   tanklevel_params_t tanklevel_params;
+#endif
+
+#ifdef HEATING_CTRL_SUPPORT
+  heating_ctrl_params_t heating_ctrl_params;
 #endif
   uint8_t crc;
 };

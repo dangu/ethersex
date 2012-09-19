@@ -25,6 +25,9 @@
 #ifndef HAVE_HEATINGCTRL_H
 #define HAVE_HEATINGCTRL_H
 
+
+
+
 /* This struct contains the parameters as well as the state of the
  * PID controller
  */
@@ -40,7 +43,15 @@ typedef struct
   int16_t I;
   int16_t u;
 
-} pidData_t;
+} pid_data_t;
+
+/* Eeprom parameters */
+typedef struct {
+  uint16_t  t_target_room;
+  pid_data_t pid_room;
+  pid_data_t pid_rad;
+
+} heating_ctrl_params_t;
 
 /* Temperature sensor data
  * This struct contains the rom ID of the 1w sensor as well as the
@@ -76,7 +87,7 @@ void heating_ctrl_periodic(void);
 
 int16_t heating_ctrl_controller(void);
 
-int16_t pid_controller(pidData_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr);
+int16_t pid_controller(pid_data_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr);
 
 
 #include "config.h"

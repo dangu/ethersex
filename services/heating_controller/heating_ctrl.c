@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "core/eeprom.h"
 #include "heating_ctrl.h"
 #include "core/bit-macros.h"
 
@@ -34,10 +35,9 @@
 
 static int16_t periodicCounter = 0;
 
-static pidData_t pidDataRoom, pidDataRad;
 static sensor_data_t sensors[N_SENSORS];
 
-static int16_t tTargetRoom=T_RES(21);
+heating_ctrl_params_t heating_ctrl_params_ram;
 
 /*
   If enabled in menuconfig, this function is called during boot up of ethersex
@@ -47,21 +47,9 @@ heating_ctrl_init(void)
 {
   HEATINGCTRLDEBUG("init\n");
 
-  // Init room temperature controller parameter
-  pidDataRoom.I = T_RES(T_RES(30));     // Initial target rad temp
-  pidDataRoom.Igain = 1;
-  pidDataRoom.Pgain = 1;
-  pidDataRoom.u = T_RES(20);
-  pidDataRoom.uMax = T_RES(40);  // Dynamically controlled!
-  pidDataRoom.uMin = T_RES(15);
+  /* restore parameters */
+  eeprom_restore(heating_ctrl_params, &heating_ctrl_params_ram, sizeof(heating_ctrl_params_t));
 
-  // Init radiator temperature controller parameter
-  pidDataRad.I = 0;
-  pidDataRad.Igain = 1;
-  pidDataRad.Pgain = 16;
-  pidDataRad.u = 0;
-  pidDataRad.uMax = 255;
-  pidDataRad.uMin = 0;
 
   /* Sensor rom init
    * "a":["105602a501080011",
@@ -158,18 +146,18 @@ heating_ctrl_controller(void)
   tRadMaxDynamic = sensors[SENSOR_T_RAD].signal + MAX_RADTEMPDIFF;
   if(MAX_RADTEMP>tRadMaxDynamic)
     {
-    pidDataRoom.uMax = tRadMaxDynamic;
+    heating_ctrl_params_ram.pid_room.uMax = tRadMaxDynamic;
     }
   else
     {
-     pidDataRoom.uMax = MAX_RADTEMP;
+      heating_ctrl_params_ram.pid_room.uMax = MAX_RADTEMP;
     }
 
   // PID room temp
-   tTargetRad = pid_controller(&pidDataRoom, tTargetRoom, &sensors[SENSOR_T_ROOM]);
+   tTargetRad = pid_controller(&heating_ctrl_params_ram.pid_room, heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
 
   // PID radiator temp
-  uShunt = pid_controller(&pidDataRad, tTargetRad, &sensors[SENSOR_T_RAD]);
+  uShunt = pid_controller(&heating_ctrl_params_ram.pid_rad, tTargetRad, &sensors[SENSOR_T_RAD]);
 
   HEATINGCTRLDEBUG("uShunt: %d\n", uShunt);
 
@@ -201,7 +189,7 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
     if((10<tTarget) && (tTarget<25))
       {
       // Sane value
-      tTargetRoom = (int16_t)T_RES(tTarget);
+      heating_ctrl_params_ram.t_target_room = (int16_t)T_RES(tTarget);
       }
     else
       {
@@ -215,7 +203,8 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
           sensors[SENSOR_T_OUT].signal>>4,
           sensors[SENSOR_T_ROOM].signal>>4,
           sensors[SENSOR_T_RAD].signal>>4,
-          pidDataRoom.I,pidDataRad.I,pidDataRoom.u,pidDataRad.u);
+          heating_ctrl_params_ram.pid_room.I,heating_ctrl_params_ram.pid_rad.I,
+          heating_ctrl_params_ram.pid_room.u,heating_ctrl_params_ram.pid_rad.u);
     }
   return ECMD_FINAL(ret);
 }
@@ -225,7 +214,7 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
  *
  */
 int16_t
-pid_controller(pidData_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr)
+pid_controller(pid_data_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr)
 {
 
 //         self.I = self.I + self.I_GAIN*err*dt

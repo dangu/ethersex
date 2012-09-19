@@ -180,6 +180,33 @@ eeprom_init (void)
   };
   eeprom_save (tanklevel_params, &tanklevel_temp, sizeof(tanklevel_params_t));
 #endif
+
+#ifdef HEATING_CTRL_SUPPORT
+  pid_data_t pid_room_temp = {
+      .Pgain=HEATING_CTRL_P_ROOM,
+      .Igain=HEATING_CTRL_I_ROOM,
+      .uMin=T_RES(40),
+      .uMax=T_RES(15),
+      .I=T_RES(T_RES(30)),
+      .u=T_RES(20),
+  };
+  pid_data_t pid_rad_temp = {
+      .Pgain=HEATING_CTRL_P_RAD,
+      .Igain=HEATING_CTRL_I_RAD,
+      .uMin=0,
+      .uMax=255,
+      .I=0,
+      .u=0,
+  };
+  heating_ctrl_params_t heating_ctrl_temp = {
+    .t_target_room = HEATING_CTRL_T_ROOM_TARGET, //HEATING_CTRL_T_ROOM_TARGET,
+     // Init room temperature controller parameter
+    .pid_room = pid_room_temp,
+    .pid_rad = pid_rad_temp,
+  };
+  eeprom_save (heating_ctrl_params, &heating_ctrl_temp, sizeof(heating_ctrl_params_t));
+#endif
+
   eeprom_update_chksum ();
 }
 
