@@ -190,6 +190,9 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
       {
       // Sane value
       heating_ctrl_params_ram.t_target_room = (int16_t)T_RES(tTarget);
+      eeprom_save (heating_ctrl_params, &heating_ctrl_params_ram, sizeof(heating_ctrl_params_t));
+      eeprom_update_chksum ();
+
       }
     else
       {
@@ -199,7 +202,8 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
   }
   else
     {
-      ret = snprintf_P(output, len, PSTR("%d %d %d I%d I%d uR%d uS%d"),
+      ret = snprintf_P(output, len, PSTR("%d %d %d %d I%d I%d uR%d uS%d"),
+          heating_ctrl_params_ram.t_target_room,
           sensors[SENSOR_T_OUT].signal>>4,
           sensors[SENSOR_T_ROOM].signal>>4,
           sensors[SENSOR_T_RAD].signal>>4,
