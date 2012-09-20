@@ -185,8 +185,8 @@ eeprom_init (void)
   pid_data_t pid_room_temp = {
       .Pgain=HEATING_CTRL_P_ROOM,
       .Igain=HEATING_CTRL_I_ROOM,
-      .uMin=T_RES(40),
-      .uMax=T_RES(15),
+      .uMin=T_RES(15),
+      .uMax=MAX_RADTEMP,
       .I=T_RES(T_RES(30)),
       .u=T_RES(20),
   };
