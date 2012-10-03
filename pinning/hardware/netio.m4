@@ -99,4 +99,4 @@ ifdef(`conf_TANKLEVEL', `
 ')
 ifdef(`conf_TANKLEVEL_LOCK', `
   pin(TANKLEVEL_LOCK, PA2, INPUT)
-
+')
