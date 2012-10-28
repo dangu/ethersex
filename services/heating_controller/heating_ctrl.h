@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2009 by Stefan Riepenhausen <rhn@gmx.net>
+ * Copyright(C) 2012 Daniel Gullberg <daniel_gullberg@hotmail.com>
+ *
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

@@ -170,9 +170,9 @@ heating_ctrl_controller(void)
 }
 
 /*
-  This function will be called on request by menuconfig, if wanted...
-  You need to enable ECMD_SUPPORT for this.
-  Otherwise you can use this function for anything you like
+ * This function will be called on request by menuconfig, if wanted...
+ * You need to enable ECMD_SUPPORT for this.
+ * Otherwise you can use this function for anything you like
  */
 int16_t
 heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
@@ -181,7 +181,7 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
   uint8_t tTarget;
 
   HEATINGCTRLDEBUG("onrequest\n");
-  // enter your code here
+
   ret = sscanf_P(cmd, PSTR("%hhu"), &tTarget);
   if(ret==1)
     {
@@ -215,6 +215,7 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
 
 /*
  * This is an implementation of a PID (proportional, integral, derivative) controller
+ * (although the derivative part is not there yet)
  *
  */
 int16_t
