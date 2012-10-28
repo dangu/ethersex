@@ -119,6 +119,36 @@ get_sensor(sensor_data_t * sensor)
   return 0;
 }
 
+/*
+ * Return selected internal information about the heating controller
+ */
+int16_t
+heating_ctrl_info(uint8_t index)
+{
+  int16_t val;
+  switch(index){
+  case 0:
+    val = heating_ctrl_params_ram.t_target_room;
+    break;
+  case 1:
+    val = sensors[SENSOR_T_ROOM].signal;
+    break;
+  case 2:
+    val = heating_ctrl_params_ram.pid_room.u;
+    break;
+  case 3:
+    val = sensors[SENSOR_T_RAD].signal;
+    break;
+  case 4:
+    val = sensors[SENSOR_T_OUT].signal;
+    break;
+  default:
+    val=0;
+    break;
+  }
+  return (val*10)/16;
+}
+
 int16_t
 heating_ctrl_controller(void)
 {

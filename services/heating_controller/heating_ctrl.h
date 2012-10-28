@@ -86,6 +86,8 @@ void heating_ctrl_init(void);
 
 void heating_ctrl_periodic(void);
 
+int16_t heating_ctrl_info(uint8_t index);
+
 int16_t heating_ctrl_controller(void);
 
 int16_t pid_controller(pid_data_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr);

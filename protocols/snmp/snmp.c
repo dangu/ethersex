@@ -43,6 +43,10 @@
 #include "services/tanklevel/tanklevel.h"
 #endif
 
+#ifdef HEATING_CTRL_SUPPORT
+#include "services/heating_controller/heating_ctrl.h"
+#endif
+
 #ifdef SNMP_SUPPORT
 
 /**********************************************************
@@ -276,6 +280,48 @@ tank_next(uint8_t * ptr, struct snmp_varbinding * bind)
 }
 #endif
 
+#ifdef HEATING_CTRL_SUPPORT
+/*
+ * Return information about the heating controller
+ * 0    Indoor temp set
+ * 1    Indoor temp measured
+ * 2    Radiator temp set
+ * 3    Radiator temp measured
+ * 4    Outdoor temp measured
+ */
+uint8_t
+heating_ctrl_reaction(uint8_t * ptr, struct snmp_varbinding * bind, void *userdata)
+{
+  if (bind->len != 1)
+  {
+    return 0;
+  }
+
+  switch (bind->data[0])
+  {
+    case 0:
+      return encode_short(ptr, SNMP_TYPE_INTEGER, heating_ctrl_info(0));
+    case 1:
+      return encode_short(ptr, SNMP_TYPE_INTEGER, heating_ctrl_info(1));
+    case 2:
+      return encode_short(ptr, SNMP_TYPE_INTEGER, heating_ctrl_info(2));
+    case 3:
+      return encode_short(ptr, SNMP_TYPE_INTEGER, heating_ctrl_info(3));
+    case 4:
+      return encode_short(ptr, SNMP_TYPE_INTEGER, heating_ctrl_info(4));
+    default:
+      return 0;
+  }
+}
+
+uint8_t
+heating_ctrl_next(uint8_t * ptr, struct snmp_varbinding * bind)
+{
+  return onelevel_next(ptr, bind, 5);
+}
+#endif
+
+
 uint8_t
 string_pgm_reaction(uint8_t * ptr, struct snmp_varbinding * bind,
                     void *userdata)
@@ -331,6 +377,10 @@ const char ow_present_reaction_obj_name[] PROGMEM = SNMP_OID_ETHERSEX "\x03\x04"
 const char tank_reaction_obj_name[] PROGMEM = SNMP_OID_ETHERSEX "\x04";
 #endif
 
+#ifdef HEATING_CTRL_SUPPORT
+const char heating_ctrl_reaction_obj_name[] PROGMEM = SNMP_OID_ETHERSEX "\x05";
+#endif
+
 const struct snmp_reaction snmp_reactions[] PROGMEM = {
   {desc_obj_name, string_pgm_reaction, (void *) desc_value, NULL},
 #if defined(WHM_SUPPORT) || defined(UPTIME_SUPPORT)
@@ -356,6 +406,9 @@ const struct snmp_reaction snmp_reactions[] PROGMEM = {
 #endif
 #ifdef TANKLEVEL_SUPPORT
   {tank_reaction_obj_name, tank_reaction, NULL, tank_next},
+#endif
+#ifdef HEATING_CTRL_SUPPORT
+  {heating_ctrl_reaction_obj_name, heating_ctrl_reaction, NULL, heating_ctrl_next},
 #endif
   {NULL, NULL, NULL, NULL}
 };
