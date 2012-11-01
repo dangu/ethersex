@@ -48,7 +48,8 @@ heating_ctrl_init(void)
   HEATINGCTRLDEBUG("init\n");
 
   /* restore parameters */
-  eeprom_restore(heating_ctrl_params, &heating_ctrl_params_ram, sizeof(heating_ctrl_params_t));
+  eeprom_restore(heating_ctrl_params, &heating_ctrl_params_ram,
+                 sizeof(heating_ctrl_params_t));
 
 
   /* Sensor rom init
@@ -62,29 +63,22 @@ heating_ctrl_init(void)
   sensors[SENSOR_T_ROOM].rom.raw = 0x5100000271fadb28;
   sensors[SENSOR_T_RAD].rom.raw = 0x11000801a5025610;
   sensors[SENSOR_T_OUT].rom.raw = 0xe5000801a536d110;
-
 }
 
 /*
-  If enabled in menuconfig, this function is periodically called
-  change "timer(1000,heating_ctrl_periodic)" if needed
+ * If enabled in menuconfig, this function is periodically called
 */
 
 void
 heating_ctrl_periodic(void)
 {
-
-
   HEATINGCTRLDEBUG("Counter: %d\n", periodicCounter++);
   heating_ctrl_controller();
-
-
 }
 
 int16_t
 get_sensor(sensor_data_t * sensor)
 {
-
   int8_t ret;
   ow_rom_code_t *romPtr;
 
@@ -107,15 +101,11 @@ get_sensor(sensor_data_t * sensor)
     //HEATINGCTRLDEBUG("successfully read scratchpad\n");
 
 
-      sensor->signal = ow_temp_normalize(romPtr, &sp)>>4;
+    sensor->signal = ow_temp_normalize(romPtr, &sp) >> 4;
 
     //HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp),
     //                 HI8(((temp & 0x00ff) * 10) + 0x80));
-
-
   }
-
-
   return 0;
 }
 
@@ -126,27 +116,28 @@ int16_t
 heating_ctrl_info(uint8_t index)
 {
   int16_t val;
-  switch(index){
-  case 0:
-    val = heating_ctrl_params_ram.t_target_room;
-    break;
-  case 1:
-    val = sensors[SENSOR_T_ROOM].signal;
-    break;
-  case 2:
-    val = heating_ctrl_params_ram.pid_room.u;
-    break;
-  case 3:
-    val = sensors[SENSOR_T_RAD].signal;
-    break;
-  case 4:
-    val = sensors[SENSOR_T_OUT].signal;
-    break;
-  default:
-    val=0;
-    break;
+  switch (index)
+  {
+    case 0:
+      val = heating_ctrl_params_ram.t_target_room;
+      break;
+    case 1:
+      val = sensors[SENSOR_T_ROOM].signal;
+      break;
+    case 2:
+      val = heating_ctrl_params_ram.pid_room.u;
+      break;
+    case 3:
+      val = sensors[SENSOR_T_RAD].signal;
+      break;
+    case 4:
+      val = sensors[SENSOR_T_OUT].signal;
+      break;
+    default:
+      val = 0;
+      break;
   }
-  return (val*10)/16;
+  return (val * 10) / 16;
 }
 
 int16_t
@@ -163,38 +154,38 @@ heating_ctrl_controller(void)
   ret = ow_temp_start_convert_wait(NULL);
 
   for (i = 0; i < N_SENSORS; i++)
-      ret = get_sensor(&sensors[i]);
-
-
+    ret = get_sensor(&sensors[i]);
 
   /*
-  * Do not try to set a radiator temp higher than the maximum
-  * available (especially if the tanks are empty). This should
-  * prevent windup and 70 deg temperature after the next fire
-    self.pidRoom.uMax = min(self.maxRadtemp, tRadMeasured + self.maxRadtempDiff)
-  */
+   * Do not try to set a radiator temp higher than the maximum
+   * available (especially if the accumulator tanks are empty). This should
+   * prevent windup and 70 deg temperature after the next fire
+   self.pidRoom.uMax = min(self.maxRadtemp, tRadMeasured + self.maxRadtempDiff)
+   */
   tRadMaxDynamic = sensors[SENSOR_T_RAD].signal + MAX_RADTEMPDIFF;
-  if(MAX_RADTEMP>tRadMaxDynamic)
-    {
+  if (MAX_RADTEMP > tRadMaxDynamic)
+  {
     heating_ctrl_params_ram.pid_room.uMax = tRadMaxDynamic;
-    }
+  }
   else
-    {
-      heating_ctrl_params_ram.pid_room.uMax = MAX_RADTEMP;
-    }
+  {
+    heating_ctrl_params_ram.pid_room.uMax = MAX_RADTEMP;
+  }
 
   // PID room temp
-   tTargetRad = pid_controller(&heating_ctrl_params_ram.pid_room, heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
+  tTargetRad =
+    pid_controller(&heating_ctrl_params_ram.pid_room,
+                   heating_ctrl_params_ram.t_target_room,
+                   &sensors[SENSOR_T_ROOM]);
 
   // PID radiator temp
-  uShunt = pid_controller(&heating_ctrl_params_ram.pid_rad, tTargetRad, &sensors[SENSOR_T_RAD]);
+  uShunt =
+    pid_controller(&heating_ctrl_params_ram.pid_rad, tTargetRad,
+                   &sensors[SENSOR_T_RAD]);
 
   HEATINGCTRLDEBUG("uShunt: %d\n", uShunt);
 
-  setpwm('b',(uint8_t) uShunt);
-
-
-
+  setpwm('b', (uint8_t) uShunt);
 
   return ECMD_FINAL_OK;
 }
@@ -207,39 +198,42 @@ heating_ctrl_controller(void)
 int16_t
 heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
 {
-  int16_t ret=0;
+  int16_t ret = 0;
   uint8_t tTarget;
 
   HEATINGCTRLDEBUG("onrequest\n");
 
   ret = sscanf_P(cmd, PSTR("%hhu"), &tTarget);
-  if(ret==1)
-    {
+  if (ret == 1)
+  {
     // Found a number
-    if((10<tTarget) && (tTarget<25))
-      {
+    if ((10 < tTarget) && (tTarget < 25))
+    {
       // Sane value
-      heating_ctrl_params_ram.t_target_room = (int16_t)T_RES(tTarget);
-      eeprom_save (heating_ctrl_params, &heating_ctrl_params_ram, sizeof(heating_ctrl_params_t));
-      eeprom_update_chksum ();
+      heating_ctrl_params_ram.t_target_room = (int16_t) T_RES(tTarget);
+      eeprom_save(heating_ctrl_params, &heating_ctrl_params_ram,
+                  sizeof(heating_ctrl_params_t));
+      eeprom_update_chksum();
 
-      }
+    }
     else
-      {
-        return ECMD_ERR_PARSE_ERROR;
-      }
-    ret = snprintf_P(output, len, PSTR("Set new target to %d degC"),tTarget);
+    {
+      return ECMD_ERR_PARSE_ERROR;
+    }
+    ret = snprintf_P(output, len, PSTR("Set new target to %d degC"), tTarget);
   }
   else
-    {
-      ret = snprintf_P(output, len, PSTR("%d %d %d %d I%d I%d uR%d uS%d"),
-          heating_ctrl_params_ram.t_target_room,
-          sensors[SENSOR_T_OUT].signal>>4,
-          sensors[SENSOR_T_ROOM].signal>>4,
-          sensors[SENSOR_T_RAD].signal>>4,
-          heating_ctrl_params_ram.pid_room.I,heating_ctrl_params_ram.pid_rad.I,
-          heating_ctrl_params_ram.pid_room.u,heating_ctrl_params_ram.pid_rad.u);
-    }
+  {
+    ret = snprintf_P(output, len, PSTR("%d %d %d %d I%d I%d uR%d uS%d"),
+                     heating_ctrl_params_ram.t_target_room,
+                     sensors[SENSOR_T_OUT].signal >> 4,
+                     sensors[SENSOR_T_ROOM].signal >> 4,
+                     sensors[SENSOR_T_RAD].signal >> 4,
+                     heating_ctrl_params_ram.pid_room.I,
+                     heating_ctrl_params_ram.pid_rad.I,
+                     heating_ctrl_params_ram.pid_room.u,
+                     heating_ctrl_params_ram.pid_rad.u);
+  }
   return ECMD_FINAL(ret);
 }
 
@@ -249,43 +243,40 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
  *
  */
 int16_t
-pid_controller(pid_data_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr)
+pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
 {
 
 //         self.I = self.I + self.I_GAIN*err*dt
-  int16_t e,P, u;
+  int16_t e, P, u;
 
-  e = tTarget-sensorPtr->signal;
-  HEATINGCTRLDEBUG("PID: e=%d-%d=%d sens>>4=%d ", tTarget,sensorPtr->signal,e,sensorPtr->signal>>4);
+  e = tTarget - sensorPtr->signal;
+  HEATINGCTRLDEBUG("PID: e=%d-%d=%d sens>>4=%d ", tTarget, sensorPtr->signal,
+                   e, sensorPtr->signal >> 4);
 
-  P = e*pPtr->Pgain;
+  P = e * pPtr->Pgain;
   ctrl_printf("P=%d ", P);
 
-  pPtr->I = pPtr->I + e*pPtr->Igain;
+  pPtr->I = pPtr->I + e * pPtr->Igain;
   ctrl_printf("I=%d ", pPtr->I);
 
-  u = (P + pPtr->I)>>4;
+  u = (P + pPtr->I) >> 4;
   ctrl_printf("u=%d ", u);
 
-  if(u > pPtr->uMax)
-    {
-      pPtr->u= pPtr->uMax;
-    }
-  else if(u < pPtr->uMin)
-    {
-      pPtr->u =pPtr->uMin;
-    }
+  if (u > pPtr->uMax)
+  {
+    pPtr->u = pPtr->uMax;
+  }
+  else if (u < pPtr->uMin)
+  {
+    pPtr->u = pPtr->uMin;
+  }
   else
-    {
-      pPtr->u = u;
-    }
+  {
+    pPtr->u = u;
+  }
 
-  pPtr->I = pPtr->I - ((u - pPtr->u)<<4);
+  pPtr->I = pPtr->I - ((u - pPtr->u) << 4);
   ctrl_printf("Ilim=%d\n", pPtr->I);
-
-
-
-
 
   return pPtr->u;
 }

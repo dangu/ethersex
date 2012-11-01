@@ -26,9 +26,6 @@
 #ifndef HAVE_HEATINGCTRL_H
 #define HAVE_HEATINGCTRL_H
 
-
-
-
 /* This struct contains the parameters as well as the state of the
  * PID controller
  */
@@ -47,8 +44,9 @@ typedef struct
 } pid_data_t;
 
 /* Eeprom parameters */
-typedef struct {
-  uint16_t  t_target_room;
+typedef struct
+{
+  uint16_t t_target_room;
   pid_data_t pid_room;
   pid_data_t pid_rad;
 
@@ -74,10 +72,10 @@ typedef struct
 #define SENSOR_T_OUT 2
 
 // Parameters
-#define T_RES(x)  (x<<4)   // Temperature resolution (x<<4 -> 1/16 degC for example)
+#define T_RES(x)  (x<<4)        // Temperature resolution (x<<4 -> 1/16 degC for example)
 
-#define MAX_RADTEMP T_RES(60)     // Do not try to set radiator temp higher than this
-#define MAX_RADTEMPDIFF T_RES(5)   // Do not try to increase radiator temp higher than this
+#define MAX_RADTEMP T_RES(60)   // Do not try to set radiator temp higher than this
+#define MAX_RADTEMPDIFF T_RES(5)        // Do not try to increase radiator temp higher than this
 
 
 int16_t heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
@@ -90,7 +88,8 @@ int16_t heating_ctrl_info(uint8_t index);
 
 int16_t heating_ctrl_controller(void);
 
-int16_t pid_controller(pid_data_t *pPtr, int16_t tTarget, sensor_data_t *sensorPtr);
+int16_t pid_controller(pid_data_t * pPtr, int16_t tTarget,
+                       sensor_data_t * sensorPtr);
 
 
 #include "config.h"
