@@ -84,27 +84,19 @@ get_sensor(sensor_data_t * sensor)
 
   romPtr = &sensor->rom;
 
-  //HEATINGCTRLDEBUG("*romPtr 0x%x%x%x\n", romPtr->bytewise[0],
-  //                 romPtr->bytewise[1], romPtr->bytewise[2]);
-
-  //HEATINGCTRLDEBUG("conv %d\n", ret);
-
   ow_temp_scratchpad_t sp;
   ret = ow_temp_read_scratchpad(romPtr, &sp);
 
+
+
   if (ret != 1)
   {
+    /* TODO: We need some kind of error handling here */
     HEATINGCTRLDEBUG("scratchpad read failed: %d\n", ret);
   }
   else
   {
-    //HEATINGCTRLDEBUG("successfully read scratchpad\n");
-
-
     sensor->signal = ow_temp_normalize(romPtr, &sp) >> 4;
-
-    //HEATINGCTRLDEBUG("temperature: %d.%d\n", HI8(temp),
-    //                 HI8(((temp & 0x00ff) * 10) + 0x80));
   }
   return 0;
 }
