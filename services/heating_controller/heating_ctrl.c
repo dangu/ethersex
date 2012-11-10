@@ -35,7 +35,7 @@
 
 static int16_t periodicCounter = 0;
 
-static sensor_data_t sensors[N_SENSORS];
+sensor_data_t sensors[N_SENSORS];
 
 heating_ctrl_params_t heating_ctrl_params_ram;
 
@@ -212,19 +212,22 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
     {
       return ECMD_ERR_PARSE_ERROR;
     }
-    ret = snprintf_P(output, len, PSTR("Set new target to %d degC"), tTarget);
+   // ret = snprintf_P(output, len, PSTR("Set new target to %d degC"), tTarget);
+  //  ret = HEATINGCTRLSNPRINTF(output, len, PSTR("Set new target to %d degC"), tTarget);
+
   }
   else
   {
-    ret = snprintf_P(output, len, PSTR("%d %d %d %d I%d I%d uR%d uS%d"),
-                     heating_ctrl_params_ram.t_target_room,
-                     sensors[SENSOR_T_OUT].signal >> 4,
-                     sensors[SENSOR_T_ROOM].signal >> 4,
-                     sensors[SENSOR_T_RAD].signal >> 4,
-                     heating_ctrl_params_ram.pid_room.I,
-                     heating_ctrl_params_ram.pid_rad.I,
-                     heating_ctrl_params_ram.pid_room.u,
-                     heating_ctrl_params_ram.pid_rad.u);
+   // ret = snprintf_P(output, len, PSTR("%d %d %d %d I%d I%d uR%d uS%d"),
+//        ret = HEATINGCTRLSNPRINTF(output, len, PSTR("%d %d %d %d I%d I%d uR%d uS%d"),
+//                     heating_ctrl_params_ram.t_target_room,
+//                     sensors[SENSOR_T_OUT].signal >> 4,
+//                     sensors[SENSOR_T_ROOM].signal >> 4,
+//                     sensors[SENSOR_T_RAD].signal >> 4,
+//                     heating_ctrl_params_ram.pid_room.I,
+//                     heating_ctrl_params_ram.pid_rad.I,
+//                     heating_ctrl_params_ram.pid_room.u,
+//                     heating_ctrl_params_ram.pid_rad.u);
   }
   return ECMD_FINAL(ret);
 }

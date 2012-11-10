@@ -93,16 +93,16 @@ int16_t pid_controller(pid_data_t * pPtr, int16_t tTarget,
 
 
 #include "config.h"
-#ifdef DEBUG_HEATING_CTRL
+#if defined(DEBUG_HEATING_CTRL) && defined(UNIT_TESTS)
 # include "core/debug.h"
 # define HEATINGCTRLDEBUG(a...)  debug_printf("heating ctrl: " a)
 //#define HEATINGCTRLDEBUG(s, args...) printf_P(PSTR("D: " s), ## args)
-
+#define HEATINGCTRLSNPRINTF(a...) snprintf_P(a)
 #define ctrl_printf(s, args...) printf_P(PSTR(s), ## args)
-
 #else
 # define HEATINGCTRLDEBUG(a...)
 #define ctrl_printf(s, args...)
+#define HEATINGCTRLSNPRINTF(a...)
 #endif
 
 #endif /* HAVE_HEATINGCTRL_H */

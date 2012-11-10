@@ -10,7 +10,7 @@ CFLAGS+=-I/usr/lib/avr/include
 #CFLAGS+=`pkg-config --cflags glib-2.0`
 
 OBJS=CU_test1.o
-#OBJS+=$(BASEDIR)/services/heating_controller/heating_ctrl.c
+OBJS+=$(BASEDIR)/services/heating_controller/heating_ctrl.o
 #OBJS+=$(BASEDIR)/core/host/printf.c
 
 USER_OBJS=-lcunit

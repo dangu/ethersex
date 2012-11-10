@@ -1,24 +1,44 @@
 //#include "stdio.h"
 #include <CUnit/Basic.h>
-#include "../../services/heating_controller/heating_ctrl.h"
+#include "CU_test1.h"
+#include "services/heating_controller/heating_ctrl.h"
+#include "core/eeprom.h"
+#include "hardware/onewire/onewire.h"
+#include "hardware/pwm/pwm.h"
 //#include <avr/pgmspace.h>
+
+extern sensor_data_t sensors[N_SENSORS];
+
+
+void eeprom_read_block(){}
+int8_t ow_temp_read_scratchpad(ow_rom_code_t * rom, ow_temp_scratchpad_t * scratchpad){
+  return 0;
+}
+int16_t  ow_temp_normalize(ow_rom_code_t * rom, ow_temp_scratchpad_t * sp){
+  return 0;
+}
+int8_t ow_temp_start_convert(ow_rom_code_t * rom, uint8_t wait){
+  return 0;
+}
+void eeprom_write_block_hack (void *dst, const void *src, size_t n)
+{}
+
+uint8_t eeprom_get_chksum (void){
+  return 0;
+}
+
+void setpwm(char channel, uint8_t setval){
+
+}
+
+int sscanf_P(const char *__buf, const char *__fmt, ...){
+  return 0;
+}
 
 
 /* Stubs
  *
  */
-//int
-//printf_P (const char *fmt, ...)
-//{
-//  char *f = printffmtfix(fmt);
-//va_list va;
-//va_start (va, fmt);
-//int r = vprintf (f, va);
-//va_end (va);
-//
-//g_free (f);
-//return r;
-//}
 
 /* End stubs
  *
@@ -51,9 +71,9 @@ int clean_suite1(void)
 /****** Test functions ********/
 
 void test_heating_ctrl_init(void){
- // heating_ctrl_init();
+  heating_ctrl_init();
 
-  CU_ASSERT(1 == 0);
+  CU_ASSERT(sensors[SENSOR_T_ROOM].rom.raw == 0x5100000271fadb28);
 }
 
 
