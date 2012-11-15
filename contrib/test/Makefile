@@ -3,28 +3,26 @@ BASEDIR = ../..
 IDIR =$(BASEDIR)
 CFLAGS=-I$(IDIR)
 CFLAGS+=-I/usr/lib/avr/include
-#CFLAGS+=-I/usr/lib/gcc/avr/4.3.4/include
-#CFLAGS+=-I/usr/lib/gcc/avr/4.3.4/include-fixed
-#CFLAGS+=-I/usr/include
-#CFLAGS+=-I/usr/local/include
-#CFLAGS+=`pkg-config --cflags glib-2.0`
 
 OBJS=CU_test1.o
 OBJS+=$(BASEDIR)/services/heating_controller/heating_ctrl.o
-#OBJS+=$(BASEDIR)/core/host/printf.c
 
 USER_OBJS=-lcunit
 
 # All Target
-all: CU_tests
+all: CU_test1
 
 # Tool invocations
-CU_tests: $(OBJS) $(USER_OBJS)
+CU_test1: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc  -o "test1" $(OBJS) $(USER_OBJS) $(CFLAGS) $(LIBS)
+	gcc  -g -o $@ $(OBJS) $(USER_OBJS) $(CFLAGS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
+
+CU_test1.o : CU_test1.c
+	$(CC) -g $(CFLAGS) -c $<
+
 
 # Other Targets
 clean:

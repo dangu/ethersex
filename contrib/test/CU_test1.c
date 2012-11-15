@@ -8,6 +8,7 @@
 //#include <avr/pgmspace.h>
 
 extern sensor_data_t sensors[N_SENSORS];
+extern heating_ctrl_params_t heating_ctrl_params_ram;
 
 
 void eeprom_read_block(){}
@@ -76,12 +77,49 @@ void test_heating_ctrl_init(void){
   CU_ASSERT(sensors[SENSOR_T_ROOM].rom.raw == 0x5100000271fadb28);
 }
 
+void test_pid_controller(void){
+  long cnt;
+
+  /* Prerequisites */
+  sensors[SENSOR_T_ROOM].signal = 20<<4;
+  heating_ctrl_params_ram.pid_room.I = 1;
+  heating_ctrl_params_ram.pid_room.Igain = 1;
+  heating_ctrl_params_ram.pid_room.Pgain = 1;
+  heating_ctrl_params_ram.pid_room.u = 0;
+  heating_ctrl_params_ram.pid_room.uMax = 40<<4;
+  heating_ctrl_params_ram.pid_room.uMin = 0;
+  heating_ctrl_params_ram.t_target_room = 20<<4;
+
+  /* Test 1:
+   * The controller output shall stay at 0 when target temperature
+   * is reached
+   */
+  for(cnt=0;cnt<10;cnt++){
+    pid_controller(&heating_ctrl_params_ram.pid_room,
+        heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
+
+
+    CU_ASSERT(heating_ctrl_params_ram.pid_room.u == 0);
+  }
+  /* Test 2:
+   * The controller output shall be limited at uMax
+   */
+  sensors[SENSOR_T_ROOM].signal = 19;
+
+  for(cnt=0;cnt<10;cnt++){
+    pid_controller(&heating_ctrl_params_ram.pid_room,
+        heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
+
+    printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
+    CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
+  }
+}
+
 
 /******  End Test functions ********/
 
 
 int main(){
-  printf("Hello, testworld!");
     CU_pSuite pSuite = NULL;
 
     /* initialize the CUnit test registry */
@@ -96,8 +134,8 @@ int main(){
     }
 
     /* add the tests to the suite */
-      if ((NULL == CU_add_test(pSuite, "test of heating_ctrl_init()", test_heating_ctrl_init))
-  //     (NULL == CU_add_test(pSuite, "test of getTwo()", testGetTwo)) ||
+      if ((NULL == CU_add_test(pSuite, "test of heating_ctrl_init()", test_heating_ctrl_init)) ||
+       (NULL == CU_add_test(pSuite, "test of pid_controller()", test_pid_controller))
     //   (NULL == CU_add_test(pSuite, "test of getThreeString()", testGetThreeString)) ||
   //     (NULL == CU_add_test(pSuite, "test of getFourString()", testGetFourString)))
           )
