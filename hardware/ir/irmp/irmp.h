@@ -4,11 +4,12 @@
  * for additional information please
  * see http://www.mikrocontroller.net/articles/IRMP
  *
- * Copyright (c) 2010-12 by Erik Kunze <ethersex@erik-kunze.de>
+ * Copyright (c) 2010-14 by Erik Kunze <ethersex@erik-kunze.de>
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License (either version 2 or
- * version 3) as published by the Free Software Foundation.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 3
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,8 +24,8 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
-#ifndef IRMP_H
-#define IRMP_H
+#ifndef __IRMP_H
+#define __IRMP_H
 
 #include <stdint.h>
 #include <stdio.h>
@@ -66,6 +67,17 @@ typedef enum
   IRMP_PROTO_LEGO,              /* LEGO Power Functions RC */
   IRMP_PROTO_THOMSON,           /* Thomson */
   IRMP_PROTO_BOSE,              /* Bose */
+  IRMP_PROTO_A1TVBOX,           /* A1 TV-Box */
+  IRMP_PROTO_ORTEK,             /* ORTEK - Hama */
+  IRMP_PROTO_TELEFUNKEN,        /* Telefunken (1560) */
+  IRMP_PROTO_ROOMBA,            /* iRobot Roomba vacuum cleaner */
+  IRMP_PROTO_RCMM32,            /* Fujitsu-Siemens (Activy remote control) */
+  IRMP_PROTO_RCMM24,            /* Fujitsu-Siemens (Activy remote control) */
+  IRMP_PROTO_RCMM12,            /* Fujitsu-Siemens (Activy remote control) */
+  IRMP_PROTO_SPEAKER,           /* Another loudspeaker protocol, similar to Nubert */
+  IRMP_PROTO_LGAIR,             /* LG air conditioner */
+  IRMP_PROTO_SAMSUNG48,         /* air conditioner with SAMSUNG protocol (48 bits) */
+  IRMP_PROTO_RADIO1             /* Radio protocol (experimental stat */
 } irmp_prot_e;
 
 typedef struct
@@ -82,9 +94,9 @@ extern const PGM_P const irmp_proto_names[] PROGMEM;
 
 /* prototypes */
 void irmp_init(void);
-uint8_t irmp_read(irmp_data_t *);
+irmp_data_t * irmp_read(void);
 void irmp_write(irmp_data_t *);
 void irmp_process(void);
 
 #endif /* IRMP_SUPPORT */
-#endif /* IRMP_H */
+#endif /* __IRMP_H */
