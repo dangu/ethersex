@@ -39,6 +39,10 @@
 #include "hardware/onewire/onewire.h"
 #endif
 
+#ifdef DHT_SNMP_SUPPORT
+#include "hardware/dht/dht.h"
+#endif
+
 #ifdef TANKLEVEL_SUPPORT
 #include "services/tanklevel/tanklevel.h"
 #endif
@@ -311,9 +315,9 @@ heating_ctrl_reaction(uint8_t * ptr, struct snmp_varbinding * bind, void *userda
       return encode_short(ptr, SNMP_TYPE_INTEGER, heating_ctrl_info(4));
     default:
       return 0;
-  }
-}
-
+      }
+ }
+      
 uint8_t
 heating_ctrl_next(uint8_t * ptr, struct snmp_varbinding * bind)
 {
@@ -321,6 +325,44 @@ heating_ctrl_next(uint8_t * ptr, struct snmp_varbinding * bind)
 }
 #endif
 
+#ifdef DHT_SNMP_SUPPORT
+uint8_t
+dht_polling_delay_reaction(uint8_t * ptr, struct snmp_varbinding * bind, void *userdata)
+{
+  if (bind->len == 1 && bind->data[0] == 0) {
+    return encode_short(ptr, SNMP_TYPE_INTEGER, dht_global.polling_delay);
+  } else {
+    return 0;
+  }
+}
+
+uint8_t
+dht_temp_reaction(uint8_t * ptr, struct snmp_varbinding * bind, void *userdata)
+{
+  if (bind->len == 1 && bind->data[0] == 0) {
+    return encode_short(ptr, SNMP_TYPE_INTEGER, dht_global.temp);
+  } else {
+    return 0;
+  }
+}
+
+
+uint8_t
+dht_humid_reaction(uint8_t * ptr, struct snmp_varbinding * bind, void *userdata)
+{
+  if (bind->len == 1 && bind->data[0] == 0) {
+    return encode_short(ptr, SNMP_TYPE_INTEGER, dht_global.humid);
+  } else {
+    return 0;
+  }
+}
+
+uint8_t
+dht_next(uint8_t * ptr, struct snmp_varbinding * bind)
+{
+  return onelevel_next(ptr, bind, 1);
+}
+#endif
 
 uint8_t
 string_pgm_reaction(uint8_t * ptr, struct snmp_varbinding * bind,
@@ -381,6 +423,14 @@ const char tank_reaction_obj_name[] PROGMEM = SNMP_OID_ETHERSEX "\x04";
 const char heating_ctrl_reaction_obj_name[] PROGMEM = SNMP_OID_ETHERSEX "\x05";
 #endif
 
+#ifdef DHT_SNMP_SUPPORT
+const char dht_general_obj_name[] PROGMEM = SNMP_OID_ETHERSEX "\x05";
+
+const char dht_polling_delay_obj_name[] PROGMEM = SNMP_OID_ETHERSEX "\x05\x01";
+const char dht_temp_obj_name[] PROGMEM = SNMP_OID_ETHERSEX "\x05\x02";
+const char dht_humid_obj_name[] PROGMEM = SNMP_OID_ETHERSEX "\x05\x03";
+#endif
+
 const struct snmp_reaction snmp_reactions[] PROGMEM = {
   {desc_obj_name, string_pgm_reaction, (void *) desc_value, NULL},
 #if defined(WHM_SUPPORT) || defined(UPTIME_SUPPORT)
@@ -409,6 +459,11 @@ const struct snmp_reaction snmp_reactions[] PROGMEM = {
 #endif
 #ifdef HEATING_CTRL_SUPPORT
   {heating_ctrl_reaction_obj_name, heating_ctrl_reaction, NULL, heating_ctrl_next},
+#endif
+#ifdef DHT_SNMP_SUPPORT
+  {dht_polling_delay_obj_name, dht_polling_delay_reaction, NULL, dht_next},
+  {dht_temp_obj_name, dht_temp_reaction, NULL, dht_next},
+  {dht_humid_obj_name, dht_humid_reaction, NULL, dht_next},
 #endif
   {NULL, NULL, NULL, NULL}
 };

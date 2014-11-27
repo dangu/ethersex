@@ -85,7 +85,7 @@ function define_bool () {
 }
 
 function define_symbol () {
-	true	# nothing to do, for the moment ...
+	eval $1=$2
 }
 
 function define_hex () {
@@ -282,6 +282,17 @@ function ipv6 () {
 	echo -ne "'$2' '     $1: \"$x\"$info' " >>MCmenu
 
 	echo -e "function $2 () { l_ipv6 '$1' '$2' '$3' '$x' ;}" >>MCradiolists
+}
+
+#
+# Negate the boolean value. Usesful for dep_XXX
+#
+function not() {
+	if [ "$1" = "y" ] ; then
+		echo -ne "n"
+	else
+		echo -ne "y"
+	fi
 }
 
 #
@@ -1080,7 +1091,10 @@ Select the default profile you wish to load. \
 			hr20		  "Rondostat HR20/Thermotronic Basic/Thermy"	0 \
 			lome6		  "lome6 - lights out management for ethersex"	0 \
 			alpengluehn	  "Alpengluehn 16 Channel LED Driver Hardware"	0 \
-			beteigeuze   "beteigeuze"  0 \
+			antares_O     "Antares O - AT90CAN, 40 Outputs, DIN rail"   0 \
+			antares_I     "Antares I - AT90CAN, 32 Inputs, DIN rail"    0 \
+			antares_IO    "Antares IO - AT90CAN, 16 I, 16 O, uSDcard, DIN rail"    0 \
+			beteigeuze	  "Beteigeuze - AT90CAN, 42 I/O, Unterputzdose" 0 \
 			 2>MCdialog.out
 
 		exit_status=$?

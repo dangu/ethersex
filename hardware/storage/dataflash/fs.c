@@ -810,7 +810,7 @@ fs_status_t fs_create(fs_t *fs, const char *name)
 
 }
 
-fs_status_t fs_remove(fs_t *fs, char *name)
+fs_status_t fs_remove(fs_t *fs, const char *name)
 {
 
     /* search for this filename in the nodetable */
@@ -1042,7 +1042,10 @@ fs_status_t fs_format(fs_t *fs)
     fs_page_t *inode_page = malloc(sizeof(fs_page_t));
 
     if (inode_page == NULL)
+    {
+        free(root);
         return  FS_MEM;
+    }
 
     /* create empty page */
     inode_page->root = 0;

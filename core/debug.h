@@ -26,7 +26,13 @@
 #include <stdio.h>
 #include <avr/pgmspace.h>
 #include "core/global.h"
+
+#include "core/util/byte2bin.h"
+
+#ifdef DEBUG_USE_SYSLOG
+#include "protocols/syslog/syslog.h"
 #include "protocols/syslog/syslog_debug.h"
+#endif
 
 #define noinline __attribute__((noinline))
 
@@ -37,7 +43,6 @@
 #else
 #define debug_printf(s, args...) do {} while(0)
 #endif
-#define debug_putstr(s) debug_putstr_(s)
 
 #if ARCH == ARCH_HOST
 #define debug_init() do { } while(0)
@@ -45,11 +50,12 @@
 #elif defined(DEBUG_USE_SYSLOG)
 #define debug_init() syslog_debug_init()
 #define debug_putchar(ch) syslog_debug_put(ch, NULL)
+#define debug_putstr(s) syslog_send(s)
 #else /* not DEBUG_USE_SYSLOG */
 #define debug_init() debug_init_uart()
 #define debug_putchar(ch) debug_uart_put (ch, NULL)
+#define debug_putstr(s) debug_uart_putstr(s)
 #endif /* not DEBUG_USE_SYSLOG */
-
 #else /* not DEBUG */
 #define debug_init(...) do { } while(0)
 #define debug_printf(s, args...) do {} while(0)
@@ -57,15 +63,13 @@
 #define debug_putstr(...) do { } while(0)
 #endif /* not DEBUG */
 
+#define debug_binary(val) byte2bin(val)
+
 /* prototypes */
 void debug_init_uart(void);
 void debug_process_uart(void);
 int noinline debug_uart_put(char d, FILE * stream);
-void noinline debug_putstr_(const char *);
-
-/* Return a string of 0 and 1 expressing the value of the 8bit integer v.
- * Example: 00001000 */
-char *debug_binary(uint8_t v);
+void noinline debug_uart_putstr(const char *);
 
 
 #ifdef DEBUG_NTP_ADJUST
