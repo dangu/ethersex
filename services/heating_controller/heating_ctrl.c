@@ -96,7 +96,23 @@ get_sensor(sensor_data_t * sensor)
   }
   else
   {
-    sensor->signal = ow_temp_normalize(romPtr, &sp) >> 4;
+      /* TODO: The format of ow_temp_normalize has changed. Now it
+       * returns a struct with "twodigits". Don't know what that means.
+       */
+    ow_temp_t temp = ow_temp_normalize(romPtr, &sp);
+    char tempstring[10];
+    char tempstring2[10];
+    /* If the result has two digits (21.89 deg represented as 2189) */
+    if(temp.twodigits)
+      {
+
+    sensor->signal = (temp.val/100)>>4;
+      }
+    else
+      {
+      sensor->signal = temp.val>>4;
+      }
+    HEATINGCTRLDEBUG("Temp: %s Twodigits: %d => %d\n", itoa(temp.val, tempstring,10), temp.twodigits, itoa(sensor->signal, tempstring2,10));
   }
   return 0;
 }
