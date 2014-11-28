@@ -36,3 +36,11 @@ Various make targets
 ====================
 
 * `make show-config` -- Shows the activated modules
+
+How to flash
+============
+Using a USB-to-serial converter and an AVR-NET-IO with AVRootloader
+(http://www.mikrocontroller.net/topic/avr-bootloader-mit-verschluesselung)
+To flash the ethersex.hex file, run the following command:
+avrdude -P /dev/ttyUSB0 -p m32 -c stk500v1 -u flash:w:ethersex.hex
+
