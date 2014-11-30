@@ -194,6 +194,7 @@ heating_ctrl_controller(void)
   uShunt =
     pid_controller(&heating_ctrl_params_ram.pid_rad, tTargetRad,
                    &sensors[SENSOR_T_RAD]);
+  uShunt = uShunt/100;
 
   HEATINGCTRLDEBUG("uShunt: %d\n", uShunt);
 
@@ -268,11 +269,13 @@ pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
   P = e * pPtr->Pgain;
   ctrl_printf("P=%d ", P);
 
-  pPtr->I = pPtr->I + e * pPtr->Igain;
+  pPtr->I = pPtr->I + (e * pPtr->Igain)/100;
   ctrl_printf("I=%d ", pPtr->I);
 
-  u = (P + pPtr->I) / 100;
+  u = (P + pPtr->I);
   ctrl_printf("u=%d ", u);
+  ctrl_printf("uMax=%d ", pPtr->uMax);
+
 
   if (u > pPtr->uMax)
   {
@@ -287,7 +290,7 @@ pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
     pPtr->u = u;
   }
 
-  pPtr->I = pPtr->I - ((u - pPtr->u) * 100);
+  pPtr->I = pPtr->I - (u - pPtr->u);
   ctrl_printf("Ilim=%d\n", pPtr->I);
 
   return pPtr->u;
