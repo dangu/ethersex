@@ -1,7 +1,7 @@
 # Includes
 BASEDIR = ../..
 IDIR =$(BASEDIR)
-CFLAGS=-I$(IDIR)
+CFLAGS=-O0 -I$(IDIR)
 CFLAGS+=-I/usr/lib/avr/include
 
 OBJS=CU_test1.o

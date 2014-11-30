@@ -105,12 +105,11 @@ get_sensor(sensor_data_t * sensor)
     /* If the result has two digits (21.89 deg represented as 2189) */
     if(temp.twodigits)
       {
-
-    sensor->signal = (temp.val/100)>>4;
+        sensor->signal = temp.val;
       }
     else
       {
-      sensor->signal = temp.val>>4;
+        sensor->signal = temp.val*10;
       }
     HEATINGCTRLDEBUG("Temp: %s Twodigits: %d => %d\n", itoa(temp.val, tempstring,10), temp.twodigits, itoa(sensor->signal, tempstring2,10));
   }
@@ -261,8 +260,8 @@ pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
   int16_t e, P, u;
 
   e = tTarget - sensorPtr->signal;
-  HEATINGCTRLDEBUG("PID: e=%d-%d=%d sens>>4=%d ", tTarget, sensorPtr->signal,
-                   e, sensorPtr->signal >> 4);
+  HEATINGCTRLDEBUG("PID: e=%d-%d=%d sens=%d ", tTarget, sensorPtr->signal,
+                   e, sensorPtr->signal);
 
   P = e * pPtr->Pgain;
   ctrl_printf("P=%d ", P);

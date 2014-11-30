@@ -428,7 +428,35 @@ int8_t ow_temp_read_scratchpad(ow_rom_code_t * rom,
 int8_t ow_temp_power(ow_rom_code_t * rom);
 
 
-/* return normalized temperature for device */
+/* return normalized temperature for device
+ *
+ * The scratchpad temperature data format is as follows:
+ * DS18B20 and DS1822
+ * MSB                     LSB
+ * S S S S | S  d6 d5 d4 | d3 d2 d1 d0 | d-1 d-2 d-3 d-4
+ *
+ * DS1820 and DS18S20
+ * MSB                     LSB
+ * S S S S | S  S  S  S  | d6 d5 d4 d3 | d2  d1  d0  d-1
+ *
+ * where
+ * S=sign
+ * d6 = data bit 2^6
+ * d0 = data bit 2^0
+ * d-4 = data bit 2^-4
+ *
+ * Calculation for DS1820:
+ * Temperature = Temp_Read - 0.25 +
+ *               (Count_Per_C - Count_Remain)/Count_Per_C
+ * where Temp_Read has truncated the d-1 bit (i.e masked with 0xFE)
+ *
+ *
+ * ow_remp_normalize returns decigrad (i.e 10.2 degC is returned as 102)
+ * for DS1820 and DS18S20
+ * It returns centigrad (i.e 10.2 degC is returned as 1020)
+ * for DS18B20
+*/
+
 ow_temp_t ow_temp_normalize(ow_rom_code_t * rom, ow_temp_scratchpad_t * sp);
 
 
