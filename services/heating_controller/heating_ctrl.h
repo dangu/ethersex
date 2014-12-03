@@ -61,6 +61,7 @@ typedef struct
 {
   ow_rom_code_t rom;
   int16_t signal;
+  int16_t signalFilt;
 
 } sensor_data_t;
 
@@ -80,6 +81,9 @@ typedef struct
 
 int16_t heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
 
+int16_t heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
+
+
 void heating_ctrl_init(void);
 
 void heating_ctrl_periodic(void);
@@ -90,6 +94,12 @@ int16_t heating_ctrl_controller(void);
 
 int16_t pid_controller(pid_data_t * pPtr, int16_t tTarget,
                        sensor_data_t * sensorPtr);
+
+/** Get sensor value
+ *
+ */
+int16_t
+get_sensor(sensor_data_t * sensor);
 
 /** First order filter
  *

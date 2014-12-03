@@ -34,6 +34,12 @@ parse_cmd_heating_ctrl_command(char *cmd, char *output, uint16_t len)
 }
 
 int16_t
+parse_cmd_heating_ctrl_command_filter(char *cmd, char *output, uint16_t len)
+{
+  return heating_ctrl_command_filter(cmd, output, len);
+}
+
+int16_t
 parse_cmd_heating_ctrl_init(char *cmd, char *output, uint16_t len)
 {
   return 0;
@@ -49,6 +55,7 @@ parse_cmd_heating_ctrl_periodic(char *cmd, char *output, uint16_t len)
 -- Ethersex META --
 block(Heating_Controller)
 ecmd_feature(heating_ctrl_command, "heating",[degC*16], Set target room temp in degC*16)
+ecmd_feature(heating_ctrl_command_filter, "heating_filter",[0-15], Filter constant, 15 is no filter)
 ecmd_feature(heating_ctrl_init, "heating_init",, Manually call heating_ctrl init method)
 ecmd_feature(heating_ctrl_periodic, "heating_periodic",, Manually call heating_ctrl periodic method)
 */
