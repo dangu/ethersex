@@ -187,14 +187,14 @@ eeprom_init (void)
       .Igain=HEATING_CTRL_I_ROOM,
       .uMin=T_RES(15),
       .uMax=MAX_RADTEMP,
-      .I=T_RES(T_RES(30)),
+      .I=T_RES(30),
       .u=T_RES(20),
   };
   pid_data_t pid_rad_temp = {
       .Pgain=HEATING_CTRL_P_RAD,
       .Igain=HEATING_CTRL_I_RAD,
       .uMin=0,
-      .uMax=255,
+      .uMax=25500,
       .I=0,
       .u=0,
   };

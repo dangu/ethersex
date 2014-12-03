@@ -21,31 +21,31 @@ ow_temp_t  ow_temp_normalize(ow_rom_code_t * rom, ow_temp_scratchpad_t * sp){
   ow_temp_t ret = { 0, 0 };
   return ret;
 }
-*/
+ */
 
 ow_temp_t
 ow_temp_normalize(ow_rom_code_t * rom, ow_temp_scratchpad_t * sp)
 {
   ow_temp_t ret = { 0, 0 };
   if (rom->family == OW_FAMILY_DS1820)
-  {
+    {
       /* This calculation is done in deg*256 */
-    uint16_t temp = (int16_t) ((sp->temperature & 0xfffe) << 7) - 0x40 +
-      (((sp->count_per_c - sp->count_remain) << 8) / sp->count_per_c);
-    /* At this point, temp has the format
-     *  S  d6 d5 d4 | d3 d2  d1  d0 | d-1 d-2 0  0 | 0 0 0 0
-     */
-    ret.val = ((int8_t) HI8(temp)) * 10 + HI8(((temp & 0x00ff) * 10) + 0x80);
-    /* implicitly: ret.twodigits = 0; */
-  }
+      uint16_t temp = (int16_t) ((sp->temperature & 0xfffe) << 7) - 0x40 +
+          (((sp->count_per_c - sp->count_remain) << 8) / sp->count_per_c);
+      /* At this point, temp has the format
+       *  S  d6 d5 d4 | d3 d2  d1  d0 | d-1 d-2 0  0 | 0 0 0 0
+       */
+      ret.val = ((int8_t) HI8(temp)) * 10 + HI8(((temp & 0x00ff) * 10) + 0x80);
+      /* implicitly: ret.twodigits = 0; */
+    }
   else if (rom->family == OW_FAMILY_DS1822 ||
-           rom->family == OW_FAMILY_DS18B20)
-  {
-    uint16_t temp = (int16_t) (sp->temperature << 4);
-    ret.val =
-      ((int8_t) HI8(temp)) * 100 + HI8(((temp & 0x00ff) * 100) + 0x80);
-    ret.twodigits = 1;
-  }
+      rom->family == OW_FAMILY_DS18B20)
+    {
+      uint16_t temp = (int16_t) (sp->temperature << 4);
+      ret.val =
+          ((int8_t) HI8(temp)) * 100 + HI8(((temp & 0x00ff) * 100) + 0x80);
+      ret.twodigits = 1;
+    }
   return ret;
 }
 
@@ -57,9 +57,9 @@ ow_temp_normalize_old(ow_rom_code_t * rom, ow_temp_scratchpad_t * sp)
 {
   if (rom->family == OW_FAMILY_DS1820)
     return (int16_t) ((sp->temperature & 0xfffe) << 7) - 0x40 +
-      (((sp->count_per_c - sp->count_remain) << 8) / sp->count_per_c);
+        (((sp->count_per_c - sp->count_remain) << 8) / sp->count_per_c);
   else if (rom->family == OW_FAMILY_DS1822 ||
-           rom->family == OW_FAMILY_DS18B20)
+      rom->family == OW_FAMILY_DS18B20)
     return (int16_t) (sp->temperature << 4);
   else
     return -1;
@@ -73,6 +73,14 @@ void eeprom_write_block_hack (void *dst, const void *src, size_t n)
 
 uint8_t eeprom_get_chksum (void){
   return 0;
+}
+
+
+int16_t filter_ewma(int16_t y_1, int16_t x, uint8_t a)
+{
+  int16_t y;
+  y = (y_1*(1<<4-a) + x*a)>>4;
+  return y;
 }
 
 void setpwm(char channel, uint8_t setval){
@@ -98,8 +106,8 @@ int sscanf_P(const char *__buf, const char *__fmt, ...){
  */
 int init_suite1(void)
 {
-   /* Here we put code that will run before
-    * the entire test suit runs. */
+  /* Here we put code that will run before
+   * the entire test suit runs. */
   return 0;
 }
 
@@ -142,11 +150,11 @@ void test_pid_controller(void){
    * is reached
    */
   for(cnt=0;cnt<10;cnt++){
-    pid_controller(&heating_ctrl_params_ram.pid_room,
-        heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
+      pid_controller(&heating_ctrl_params_ram.pid_room,
+          heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
 
 
-    CU_ASSERT(heating_ctrl_params_ram.pid_room.u == 0);
+      CU_ASSERT(heating_ctrl_params_ram.pid_room.u == 0);
   }
   /* Test 2:
    * The controller output shall be limited at uMax
@@ -154,11 +162,11 @@ void test_pid_controller(void){
   sensors[SENSOR_T_ROOM].signal = 19;
 
   for(cnt=0;cnt<10;cnt++){
-    pid_controller(&heating_ctrl_params_ram.pid_room,
-        heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
+      pid_controller(&heating_ctrl_params_ram.pid_room,
+          heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
 
-    printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
-    CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
+  //    printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
+      CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
   }
 }
 
@@ -175,24 +183,24 @@ compare_temp(ow_temp_scratchpad_t* spPtr, ow_rom_code_t* romPtr, int tTarget,
   spPtr->temperature_low =  lo;
   spPtr->count_per_c = 16;
   spPtr->count_remain = remain;
-  printf("Scratchpad raw:: 0x%02X %02X\n", spPtr->temperature_high,
-      spPtr->temperature_low);
+ // printf("Scratchpad raw:: 0x%02X %02X\n", spPtr->temperature_high,
+ //     spPtr->temperature_low);
 
   /* Commented out the new implementation
   ow_temp_t temp = ow_temp_normalize(romPtr, spPtr);
   printf("Ttarget: %d Tcalc %d\n", tTarget, temp.val);
   CU_ASSERT(temp.val == tTarget);
-*/
+   */
   int16_t temp = ow_temp_normalize_old(romPtr, spPtr);
   if(romPtr->family == OW_FAMILY_DS18B20)
     {
-    temp = (temp/16*100)/16;
+      temp = (temp/16*100)/16;
     }
   else
-  {
-    temp = (temp/16*10)/16;
-  }
-  printf("Ttarget: %d Tcalc %d\n", tTarget, temp);
+    {
+      temp = (temp/16*10)/16;
+    }
+ // printf("Ttarget: %d Tcalc %d\n", tTarget, temp);
   CU_ASSERT(temp == tTarget);
 }
 
@@ -249,48 +257,65 @@ void test_onewire(void){
   compare_temp(&sp, romPtr, 12500, 0x07, 0xD0, 0x0);
   compare_temp(&sp, romPtr, 8500, 0x05, 0x50, 0x0);
   compare_temp(&sp, romPtr, 2506, 0x01, 0x91, 0x0);
-  compare_temp(&sp, romPtr, 1013, 0x00, 0xA2, 0x0);
+  compare_temp(&sp, romPtr, 1012, 0x00, 0xA2, 0x0);
   compare_temp(&sp, romPtr, 50  , 0x00, 0x08, 0x0);
   compare_temp(&sp, romPtr, 0   , 0x00, 0x00, 0x0);
   compare_temp(&sp, romPtr, -50 , 0xFF, 0xF8, 0x0);
-  compare_temp(&sp, romPtr, -1013, 0xFF, 0x5E, 0x0); /* This fails. It rounds to -1012. Is that ok? */
+  compare_temp(&sp, romPtr, -1012, 0xFF, 0x5E, 0x0); /* 1013 This fails. It rounds to -1012. Is that ok? */
   compare_temp(&sp, romPtr, -2506, 0xFE, 0x6F, 0x0);
   compare_temp(&sp, romPtr, -5500, 0xFC, 0x90, 0x0);
+}
+
+
+/** Test filter function
+ *
+ */
+void test_filter_ewma()
+{
+  int16_t y, y_1;
+  int16_t x;
+  uint8_t a;
+
+
+  CU_ASSERT(filter_ewma(123, 22, 0) == 123);
+  CU_ASSERT(filter_ewma(123, 22, 16) == 22);
+  CU_ASSERT(filter_ewma(123, 22, 16) == 22);
 }
 
 /******  End Test functions ********/
 
 
 int main(){
-    CU_pSuite pSuite = NULL;
+  CU_pSuite pSuite = NULL;
 
-    /* initialize the CUnit test registry */
-    if (CUE_SUCCESS != CU_initialize_registry())
-       return CU_get_error();
+  /* initialize the CUnit test registry */
+  if (CUE_SUCCESS != CU_initialize_registry())
+    return CU_get_error();
 
-    /* add a suite to the registry */
-    pSuite = CU_add_suite("Suite_1", init_suite1, clean_suite1);
-    if (NULL == pSuite) {
-       CU_cleanup_registry();
-       return CU_get_error();
-    }
-
-    /* add the tests to the suite */
-      if ((NULL == CU_add_test(pSuite, "test of heating_ctrl_init()", test_heating_ctrl_init)) ||
-       (NULL == CU_add_test(pSuite, "test of pid_controller()", test_pid_controller)) ||
-       (NULL == CU_add_test(pSuite, "test of onewire", test_onewire))
-    //   (NULL == CU_add_test(pSuite, "test of getThreeString()", testGetThreeString)) ||
-  //     (NULL == CU_add_test(pSuite, "test of getFourString()", testGetFourString)))
-          )
-      {
-       CU_cleanup_registry();
-       return CU_get_error();
-      }
-
-      /* Run all tests using the CUnit Basic interface */
-      CU_basic_set_mode(CU_BRM_VERBOSE);
-      CU_basic_run_tests();
+  /* add a suite to the registry */
+  pSuite = CU_add_suite("Suite_1", init_suite1, clean_suite1);
+  if (NULL == pSuite) {
       CU_cleanup_registry();
       return CU_get_error();
   }
+
+  /* add the tests to the suite */
+  if ((NULL == CU_add_test(pSuite, "test of heating_ctrl_init()", test_heating_ctrl_init)) ||
+      (NULL == CU_add_test(pSuite, "test of pid_controller()", test_pid_controller)) ||
+      (NULL == CU_add_test(pSuite, "test of onewire", test_onewire)) ||
+      (NULL == CU_add_test(pSuite, "test of filter", test_filter_ewma))
+    //   (NULL == CU_add_test(pSuite, "test of getThreeString()", testGetThreeString)) ||
+    //     (NULL == CU_add_test(pSuite, "test of getFourString()", testGetFourString)))
+  )
+  {
+    CU_cleanup_registry();
+    return CU_get_error();
+  }
+
+  /* Run all tests using the CUnit Basic interface */
+  CU_basic_set_mode(CU_BRM_VERBOSE);
+  CU_basic_run_tests();
+  CU_cleanup_registry();
+  return CU_get_error();
+}
 

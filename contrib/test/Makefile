@@ -16,7 +16,7 @@ all: CU_test1
 CU_test1: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc  -g -o $@ $(OBJS) $(USER_OBJS) $(CFLAGS) $(LIBS)
+	$(CC)  -g -o $@ $(OBJS) $(USER_OBJS) $(CFLAGS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
