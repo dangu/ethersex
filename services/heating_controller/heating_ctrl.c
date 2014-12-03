@@ -291,6 +291,14 @@ pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
   return pPtr->u;
 }
 
+int16_t filter_ewma(int16_t y_1, int16_t x, uint8_t a)
+{
+int16_t y;
+y = (y_1*(1<<4-a) + x*a)>>4;
+return y;
+}
+
+
 /*
   -- Ethersex META --
   header(services/heating_controller/heating_ctrl.h)

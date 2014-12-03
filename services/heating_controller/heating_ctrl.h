@@ -91,6 +91,18 @@ int16_t heating_ctrl_controller(void);
 int16_t pid_controller(pid_data_t * pPtr, int16_t tTarget,
                        sensor_data_t * sensorPtr);
 
+/** First order filter
+ *
+ * Implementation of an exponentially weighted moving
+ * average filter
+ * y[n]=y[n-1]*(255-a) + x[n]*a
+ *
+ * @param y Old filtered value
+ * @param x Input
+ * @param a Filter coefficient (0-255)
+ * @returns Filtered value
+ */
+int16_t filter_ewma(int16_t y_1, int16_t x, uint8_t a);
 
 #include "config.h"
 #if defined(DEBUG_HEATING_CTRL) && defined(UNIT_TESTS)
