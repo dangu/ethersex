@@ -81,7 +81,7 @@ typedef struct
 
 int16_t heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
 
-int16_t heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
+int16_t heating_ctrl_command_filter(char *cmd, char *output, uint16_t len);
 
 
 void heating_ctrl_init(void);
@@ -115,16 +115,16 @@ get_sensor(sensor_data_t * sensor);
 int16_t filter_ewma(int16_t y_1, int16_t x, uint8_t a);
 
 #include "config.h"
-#if defined(DEBUG_HEATING_CTRL) && defined(UNIT_TESTS)
+#ifdef DEBUG_HEATING_CTRL
 # include "core/debug.h"
 # define HEATINGCTRLDEBUG(a...)  debug_printf("heating ctrl: " a)
 //#define HEATINGCTRLDEBUG(s, args...) printf_P(PSTR("D: " s), ## args)
-#define HEATINGCTRLSNPRINTF(a...) snprintf_P(a)
+
 #define ctrl_printf(s, args...) printf_P(PSTR(s), ## args)
+
 #else
 # define HEATINGCTRLDEBUG(a...)
 #define ctrl_printf(s, args...)
-#define HEATINGCTRLSNPRINTF(a...)
 #endif
 
 #endif /* HAVE_HEATINGCTRL_H */
