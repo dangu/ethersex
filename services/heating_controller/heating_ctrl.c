@@ -49,7 +49,7 @@ heating_ctrl_init(void)
 
   /* restore parameters */
   eeprom_restore(heating_ctrl_params, &heating_ctrl_params_ram,
-                 sizeof(heating_ctrl_params_t));
+      sizeof(heating_ctrl_params_t));
 
 
   /* Sensor rom init
@@ -67,7 +67,7 @@ heating_ctrl_init(void)
 
 /*
  * If enabled in menuconfig, this function is periodically called
-*/
+ */
 
 void
 heating_ctrl_periodic(void)
@@ -90,32 +90,32 @@ get_sensor(sensor_data_t * sensor)
 
 
   if (ret != 1)
-  {
-    /* TODO: We need some kind of error handling here */
-    HEATINGCTRLDEBUG("scratchpad read failed: %d\n", ret);
-  }
+    {
+      /* TODO: We need some kind of error handling here */
+      HEATINGCTRLDEBUG("scratchpad read failed: %d\n", ret);
+    }
   else
-  {
+    {
       /* TODO: The format of ow_temp_normalize has changed. Now it
        * returns a struct with "twodigits". Don't know what that means.
        */
-    ow_temp_t temp = ow_temp_normalize(romPtr, &sp);
-    /* If the result has two digits (21.89 deg represented as 2189)
-     * Use temp*100 as resolution
-     *
-     * Strange. The representation of temp.val seems to be 15 bit (as the
-     * 16th bit is the twodigits). Must copy the 15th bit to the 16th to
-     * get a signed value
-     * */
-    if(temp.twodigits)
-      {
-        sensor->signal = temp.val|((temp.val<<1)&0x8000);
-      }
-    else
-      {
-        sensor->signal = 10*(temp.val|((temp.val<<1)&0x8000));
-      }
-  }
+      ow_temp_t temp = ow_temp_normalize(romPtr, &sp);
+      /* If the result has two digits (21.89 deg represented as 2189)
+       * Use temp*100 as resolution
+       *
+       * Strange. The representation of temp.val seems to be 15 bit (as the
+       * 16th bit is the twodigits). Must copy the 15th bit to the 16th to
+       * get a signed value
+       * */
+      if(temp.twodigits)
+        {
+          sensor->signal = temp.val|((temp.val<<1)&0x8000);
+        }
+      else
+        {
+          sensor->signal = 10*(temp.val|((temp.val<<1)&0x8000));
+        }
+    }
   return 0;
 }
 
@@ -130,24 +130,24 @@ heating_ctrl_info(uint8_t index)
   int16_t val;
   switch (index)
   {
-    case 0:
-      val = heating_ctrl_params_ram.t_target_room;
-      break;
-    case 1:
-      val = sensors[SENSOR_T_ROOM].signal;
-      break;
-    case 2:
-      val = heating_ctrl_params_ram.pid_room.u;
-      break;
-    case 3:
-      val = sensors[SENSOR_T_RAD].signal;
-      break;
-    case 4:
-      val = sensors[SENSOR_T_OUT].signal;
-      break;
-    default:
-      val = 0;
-      break;
+  case 0:
+    val = heating_ctrl_params_ram.t_target_room;
+    break;
+  case 1:
+    val = sensors[SENSOR_T_ROOM].signal;
+    break;
+  case 2:
+    val = heating_ctrl_params_ram.pid_room.u;
+    break;
+  case 3:
+    val = sensors[SENSOR_T_RAD].signal;
+    break;
+  case 4:
+    val = sensors[SENSOR_T_OUT].signal;
+    break;
+  default:
+    val = 0;
+    break;
   }
   return val;
 }
@@ -176,24 +176,24 @@ heating_ctrl_controller(void)
    */
   tRadMaxDynamic = sensors[SENSOR_T_RAD].signal + MAX_RADTEMPDIFF;
   if (MAX_RADTEMP > tRadMaxDynamic)
-  {
-    heating_ctrl_params_ram.pid_room.uMax = tRadMaxDynamic;
-  }
+    {
+      heating_ctrl_params_ram.pid_room.uMax = tRadMaxDynamic;
+    }
   else
-  {
-    heating_ctrl_params_ram.pid_room.uMax = MAX_RADTEMP;
-  }
+    {
+      heating_ctrl_params_ram.pid_room.uMax = MAX_RADTEMP;
+    }
 
   // PID room temp
   tTargetRad =
-    pid_controller(&heating_ctrl_params_ram.pid_room,
-                   heating_ctrl_params_ram.t_target_room,
-                   &sensors[SENSOR_T_ROOM]);
+      pid_controller(&heating_ctrl_params_ram.pid_room,
+          heating_ctrl_params_ram.t_target_room,
+          &sensors[SENSOR_T_ROOM]);
 
   // PID radiator temp
   uShunt =
-    pid_controller(&heating_ctrl_params_ram.pid_rad, tTargetRad,
-                   &sensors[SENSOR_T_RAD]);
+      pid_controller(&heating_ctrl_params_ram.pid_rad, tTargetRad,
+          &sensors[SENSOR_T_RAD]);
   uShunt = uShunt/100;
 
   HEATINGCTRLDEBUG("uShunt: %d\n", uShunt);
@@ -218,35 +218,35 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
 
   ret = sscanf_P(cmd, PSTR("%hhu"), &tTarget);
   if (ret == 1)
-  {
-    // Found a number
-    if ((100 < tTarget) && (tTarget < 250))
     {
-      // Sane value
-      heating_ctrl_params_ram.t_target_room = (int16_t) T_RES(tTarget)/10;
-      eeprom_save(heating_ctrl_params, &heating_ctrl_params_ram,
-                  sizeof(heating_ctrl_params_t));
-      eeprom_update_chksum();
+      // Found a number
+      if ((100 < tTarget) && (tTarget < 250))
+        {
+          // Sane value
+          heating_ctrl_params_ram.t_target_room = (int16_t) T_RES(tTarget)/10;
+          eeprom_save(heating_ctrl_params, &heating_ctrl_params_ram,
+              sizeof(heating_ctrl_params_t));
+          eeprom_update_chksum();
 
+        }
+      else
+        {
+          return ECMD_ERR_PARSE_ERROR;
+        }
+      ret = snprintf_P(output, len, PSTR("Set new target to %d degC*10 (10th of degrees)"), tTarget);
     }
-    else
-    {
-      return ECMD_ERR_PARSE_ERROR;
-    }
-    ret = snprintf_P(output, len, PSTR("Set new target to %d degC*10 (10th of degrees)"), tTarget);
-  }
   else
-  {
-    ret = snprintf_P(output, len, PSTR("%d %d %d %d I%d I%d uR%d uS%d"),
-                     heating_ctrl_params_ram.t_target_room,
-                     sensors[SENSOR_T_OUT].signal,
-                     sensors[SENSOR_T_ROOM].signal,
-                     sensors[SENSOR_T_RAD].signal,
-                     heating_ctrl_params_ram.pid_room.I,
-                     heating_ctrl_params_ram.pid_rad.I,
-                     heating_ctrl_params_ram.pid_room.u,
-                     heating_ctrl_params_ram.pid_rad.u);
-  }
+    {
+      ret = snprintf_P(output, len, PSTR("%d %d %d %d I%d I%d uR%d uS%d"),
+          heating_ctrl_params_ram.t_target_room,
+          sensors[SENSOR_T_OUT].signal,
+          sensors[SENSOR_T_ROOM].signal,
+          sensors[SENSOR_T_RAD].signal,
+          heating_ctrl_params_ram.pid_room.I,
+          heating_ctrl_params_ram.pid_rad.I,
+          heating_ctrl_params_ram.pid_room.u,
+          heating_ctrl_params_ram.pid_rad.u);
+    }
   return ECMD_FINAL(ret);
 }
 
@@ -259,12 +259,12 @@ int16_t
 pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
 {
 
-//         self.I = self.I + self.I_GAIN*err*dt
+  //         self.I = self.I + self.I_GAIN*err*dt
   int16_t e, P, u;
 
   e = tTarget - sensorPtr->signal;
   HEATINGCTRLDEBUG("PID: e=%d-%d=%d sens/100=%d ", tTarget, sensorPtr->signal,
-                   e, sensorPtr->signal/100);
+      e, sensorPtr->signal/100);
 
   P = e * pPtr->Pgain;
   ctrl_printf("P=%d ", P);
@@ -278,17 +278,17 @@ pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
 
 
   if (u > pPtr->uMax)
-  {
-    pPtr->u = pPtr->uMax;
-  }
+    {
+      pPtr->u = pPtr->uMax;
+    }
   else if (u < pPtr->uMin)
-  {
-    pPtr->u = pPtr->uMin;
-  }
+    {
+      pPtr->u = pPtr->uMin;
+    }
   else
-  {
-    pPtr->u = u;
-  }
+    {
+      pPtr->u = u;
+    }
 
   pPtr->I = pPtr->I - (u - pPtr->u);
   ctrl_printf("Ilim=%d\n", pPtr->I);
