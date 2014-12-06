@@ -87,6 +87,10 @@ void setpwm(char channel, uint8_t setval){
 
 }
 
+/* Stubs
+ *
+ */
+
 int sscanf_P(const char *__buf, const char *__fmt, ...){
   return 0;
 }
@@ -95,11 +99,12 @@ int snprintf_P(char *__s, size_t __n, const char *__fmt, ...){
   return 0;
 }
 
+int  printf_P(const char *__fmt, ...){
+  return 0;
+}
 
 
-/* Stubs
- *
- */
+
 
 /* End stubs
  *
@@ -170,7 +175,7 @@ void test_pid_controller(void){
       pid_controller(&heating_ctrl_params_ram.pid_room,
           heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
 
-  //    printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
+      //    printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
       CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
   }
 }
@@ -188,8 +193,8 @@ compare_temp(ow_temp_scratchpad_t* spPtr, ow_rom_code_t* romPtr, int tTarget,
   spPtr->temperature_low =  lo;
   spPtr->count_per_c = 16;
   spPtr->count_remain = remain;
- // printf("Scratchpad raw:: 0x%02X %02X\n", spPtr->temperature_high,
- //     spPtr->temperature_low);
+  // printf("Scratchpad raw:: 0x%02X %02X\n", spPtr->temperature_high,
+  //     spPtr->temperature_low);
 
   /* Commented out the new implementation
   ow_temp_t temp = ow_temp_normalize(romPtr, spPtr);
@@ -205,7 +210,7 @@ compare_temp(ow_temp_scratchpad_t* spPtr, ow_rom_code_t* romPtr, int tTarget,
     {
       temp = (temp/16*10)/16;
     }
- // printf("Ttarget: %d Tcalc %d\n", tTarget, temp);
+  // printf("Ttarget: %d Tcalc %d\n", tTarget, temp);
   CU_ASSERT(temp == tTarget);
 }
 
