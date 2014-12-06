@@ -16,12 +16,6 @@ void eeprom_read_block(){}
 int8_t ow_temp_read_scratchpad(ow_rom_code_t * rom, ow_temp_scratchpad_t * scratchpad){
   return 0;
 }
-/* Stub
-ow_temp_t  ow_temp_normalize(ow_rom_code_t * rom, ow_temp_scratchpad_t * sp){
-  ow_temp_t ret = { 0, 0 };
-  return ret;
-}
- */
 
 ow_temp_t
 ow_temp_normalize(ow_rom_code_t * rom, ow_temp_scratchpad_t * sp)
@@ -76,21 +70,13 @@ uint8_t eeprom_get_chksum (void){
 }
 
 
-//int16_t filter_ewma(int16_t y_1, int16_t x, uint8_t a)
-//{
-//  int16_t y;
-//  y = (y_1*(1<<4-a) + x*a)>>4;
-//  return y;
-//}
-
-void setpwm(char channel, uint8_t setval){
-
-}
-
 /* Stubs
  *
  */
 
+void setpwm(char channel, uint8_t setval){
+
+}
 int sscanf_P(const char *__buf, const char *__fmt, ...){
   return 0;
 }
@@ -146,20 +132,21 @@ void test_pid_controller(void){
   long cnt;
 
   /* Prerequisites */
-  sensors[SENSOR_T_ROOM].signal = 20<<4;
-  heating_ctrl_params_ram.pid_room.I = 1;
+  sensors[SENSOR_T_ROOM].signal = 2000;
+  sensors[SENSOR_T_ROOM].signalFilt = 2000;
+  heating_ctrl_params_ram.pid_room.I = 0;
   heating_ctrl_params_ram.pid_room.Igain = 1;
   heating_ctrl_params_ram.pid_room.Pgain = 1;
   heating_ctrl_params_ram.pid_room.u = 0;
-  heating_ctrl_params_ram.pid_room.uMax = 40<<4;
+  heating_ctrl_params_ram.pid_room.uMax = 4000;
   heating_ctrl_params_ram.pid_room.uMin = 0;
-  heating_ctrl_params_ram.t_target_room = 20<<4;
+  heating_ctrl_params_ram.t_target_room = 2000;
 
   /* Test 1:
    * The controller output shall stay at 0 when target temperature
    * is reached
    */
-  for(cnt=0;cnt<10;cnt++){
+  for(cnt=0;cnt<10000;cnt++){
       pid_controller(&heating_ctrl_params_ram.pid_room,
           heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
 
@@ -169,13 +156,44 @@ void test_pid_controller(void){
   /* Test 2:
    * The controller output shall be limited at uMax
    */
-  sensors[SENSOR_T_ROOM].signal = 19;
+  sensors[SENSOR_T_ROOM].signal = 1900;
+  sensors[SENSOR_T_ROOM].signalFilt = 1900;
+  heating_ctrl_params_ram.pid_room.I = 4000;
+  heating_ctrl_params_ram.pid_room.Igain = 1;
+  heating_ctrl_params_ram.pid_room.Pgain = 1;
+  heating_ctrl_params_ram.pid_room.u = 0;
+  heating_ctrl_params_ram.pid_room.uMax = 4000;
+  heating_ctrl_params_ram.pid_room.uMin = 0;
+  heating_ctrl_params_ram.t_target_room = 2000;
 
-  for(cnt=0;cnt<10;cnt++){
+  for(cnt=0;cnt<10000;cnt++){
       pid_controller(&heating_ctrl_params_ram.pid_room,
           heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
 
-      //    printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
+      //printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
+      CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
+  }
+
+  /* Test 3:
+   * Test of the I-part of the controller
+   */
+
+  /* Prerequisites */
+  sensors[SENSOR_T_ROOM].signal = 1980;
+  sensors[SENSOR_T_ROOM].signalFilt = 1980;
+  heating_ctrl_params_ram.pid_room.I = 0;
+  heating_ctrl_params_ram.pid_room.Igain = 8;
+  heating_ctrl_params_ram.pid_room.Pgain = 10;
+  heating_ctrl_params_ram.pid_room.u = 0;
+  heating_ctrl_params_ram.pid_room.uMax = 4000;
+  heating_ctrl_params_ram.pid_room.uMin = 0;
+  heating_ctrl_params_ram.t_target_room = 2000;
+
+  for(cnt=0;cnt<10000;cnt++){
+      pid_controller(&heating_ctrl_params_ram.pid_room,
+          heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
+
+      //printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
       CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
   }
 }
@@ -288,9 +306,15 @@ void test_filter_ewma()
 
 
   CU_ASSERT(filter_ewma(123, 22, 0) == 123);
-  CU_ASSERT(filter_ewma(123, 22, 16) == 22);
-  CU_ASSERT(filter_ewma(123, 22, 16) == 22);
+  CU_ASSERT(filter_ewma(123, 22, 255) == 22);
+  CU_ASSERT(filter_ewma(0xFFFF, 22, 255) == 21);
+  CU_ASSERT(filter_ewma(-32767, 22, 0) == -32767);
+  CU_ASSERT(filter_ewma(-32768, 22, 0) == -32768);
+  //CU_ASSERT(filter_ewma(-32769, 22, 0) == 32767); /* "Overflow in implicit constant conversion" */
+  CU_ASSERT(filter_ewma(0xFFFF, 22, 0) == -1);
+  CU_ASSERT(filter_ewma(-1, 22, 0) == -1);
 }
+
 
 /******  End Test functions ********/
 
@@ -314,13 +338,13 @@ int main(){
       (NULL == CU_add_test(pSuite, "test of pid_controller()", test_pid_controller)) ||
       (NULL == CU_add_test(pSuite, "test of onewire", test_onewire)) ||
       (NULL == CU_add_test(pSuite, "test of filter", test_filter_ewma))
-    //   (NULL == CU_add_test(pSuite, "test of getThreeString()", testGetThreeString)) ||
-    //     (NULL == CU_add_test(pSuite, "test of getFourString()", testGetFourString)))
+      //   (NULL == CU_add_test(pSuite, "test of getThreeString()", testGetThreeString)) ||
+      //     (NULL == CU_add_test(pSuite, "test of getFourString()", testGetFourString)))
   )
-  {
-    CU_cleanup_registry();
-    return CU_get_error();
-  }
+    {
+      CU_cleanup_registry();
+      return CU_get_error();
+    }
 
   /* Run all tests using the CUnit Basic interface */
   CU_basic_set_mode(CU_BRM_VERBOSE);
