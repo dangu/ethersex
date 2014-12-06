@@ -1,7 +1,7 @@
 # Includes
 BASEDIR = ../..
 IDIR =$(BASEDIR)
-CFLAGS= -Wattributes -O0 -I$(IDIR) 
+CFLAGS= -g -Wattributes -O0 -I$(IDIR) 
 CFLAGS+=-I/usr/lib/avr/include
 
 OBJS=CU_test1.o
@@ -16,12 +16,12 @@ all: CU_test1
 CU_test1: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	$(CC)  -g -o $@ $(OBJS) $(USER_OBJS) $(CFLAGS) $(LIBS)
+	$(CC)  -o $@ $(OBJS) $(USER_OBJS) $(CFLAGS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 CU_test1.o : CU_test1.c
-	$(CC) -g $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 
 # Other Targets
