@@ -232,48 +232,48 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
   uint8_t val;
   HEATINGCTRLDEBUG("onrequest\n");
 
-  ret = sscanf_P(cmd, PSTR("%hhu"), &val);
-  if (ret == 1)
-    {
-      // Found a number
-      if ((0 < val) && (val <= 255))
-        {
-          // Sane value
-          aFilter = val;
-        }
-      else
-        {
-          return ECMD_ERR_PARSE_ERROR;
-        }
-      ret = snprintf_P(output, len, PSTR("Set new filter param to %d"), aFilter);
-
-
-    }
+//  ret = sscanf_P(cmd, PSTR("%hhu"), &val);
+//  if (ret == 1)
+//    {
+//      // Found a number
+//      if ((0 < val) && (val <= 255))
+//        {
+//          // Sane value
+//          aFilter = val;
+//        }
+//      else
+//        {
+//          return ECMD_ERR_PARSE_ERROR;
+//        }
+//      ret = snprintf_P(output, len, PSTR("Set new filter param to %d"), aFilter);
+//
+//
+//    }
 //  else
 //    {
 //      ret = snprintf_P(output, len, PSTR("%d"), aFilter);
 //    }
 //  return ECMD_FINAL(ret);
-  //
-  //  ret = sscanf_P(cmd, PSTR("%hhu"), &tTarget);
-  //  if (ret == 1)
-  //    {
-  //      // Found a number
-  //      if ((100 < tTarget) && (tTarget < 250))
-  //        {
-  //          // Sane value
-  //          heating_ctrl_params_ram.t_target_room = (int16_t) T_RES(tTarget)/10;
-  //          eeprom_save(heating_ctrl_params, &heating_ctrl_params_ram,
-  //              sizeof(heating_ctrl_params_t));
-  //          eeprom_update_chksum();
-  //
-  //        }
-  //      else
-  //        {
-  //          return ECMD_ERR_PARSE_ERROR;
-  //        }
-  //      ret = snprintf_P(output, len, PSTR("Set new target to %d degC*10 (10th of degrees)"), tTarget);
-  //    }
+
+    ret = sscanf_P(cmd, PSTR("%hhu"), &tTarget);
+    if (ret == 1)
+      {
+        // Found a number
+        if ((100 < tTarget) && (tTarget < 250))
+          {
+            // Sane value
+            heating_ctrl_params_ram.t_target_room = (int16_t) T_RES(tTarget)/10;
+            eeprom_save(heating_ctrl_params, &heating_ctrl_params_ram,
+                sizeof(heating_ctrl_params_t));
+            eeprom_update_chksum();
+
+          }
+        else
+          {
+            return ECMD_ERR_PARSE_ERROR;
+          }
+        ret = snprintf_P(output, len, PSTR("Set new target to %d degC*10 (10th of degrees)"), tTarget);
+      }
   else
     {
       ret = snprintf_P(output, len, PSTR("%d %d %d %d I%d I%d uR%d uS%d"),
