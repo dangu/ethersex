@@ -92,6 +92,7 @@ int16_t
 get_sensor(sensor_data_t * sensor)
 {
   int8_t ret;
+  int16_t raw_temp; /* The raw temperature value, including 85 degC samples */
   ow_rom_code_t *romPtr;
 
   romPtr = &sensor->rom;
@@ -121,14 +122,25 @@ get_sensor(sensor_data_t * sensor)
        * */
       if(temp.twodigits)
         {
-          sensor->signal = temp.val|((temp.val<<1)&0x8000);
+          raw_temp = temp.val|((temp.val<<1)&0x8000);
         }
       else
         {
-          sensor->signal = 10*(temp.val|((temp.val<<1)&0x8000));
+          raw_temp = 10*(temp.val|((temp.val<<1)&0x8000));
         }
-      sensor->signalFilt = filter_ewma(sensor->signalFilt, sensor->signal, aFilter);
-      HEATINGCTRLDEBUG("Sensor: %d %d %d\n", sensor->signal, sensor->signalFilt, aFilter);
+
+      /* If this sample was 85.0 degC, discard it. It means there was an error
+       * reading from the sensor */
+      if(raw_temp == 8500)
+        {
+          HEATINGCTRLDEBUG("Sensor read error! (85 degC)");
+        }
+      else
+        {
+          sensor->signal = raw_temp;
+          sensor->signalFilt = filter_ewma(sensor->signalFilt, sensor->signal, aFilter);
+          HEATINGCTRLDEBUG("Sensor: %d %d %d\n", sensor->signal, sensor->signalFilt, aFilter);
+        }
     }
   return 0;
 }
@@ -232,54 +244,54 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
   uint8_t val;
   HEATINGCTRLDEBUG("onrequest\n");
 
-//  ret = sscanf_P(cmd, PSTR("%hhu"), &val);
-//  if (ret == 1)
-//    {
-//      // Found a number
-//      if ((0 < val) && (val <= 255))
-//        {
-//          // Sane value
-//          aFilter = val;
-//        }
-//      else
-//        {
-//          return ECMD_ERR_PARSE_ERROR;
-//        }
-//      ret = snprintf_P(output, len, PSTR("Set new filter param to %d"), aFilter);
-//
-//
-//    }
-//  else
-//    {
-//      ret = snprintf_P(output, len, PSTR("%d"), aFilter);
-//    }
-//  return ECMD_FINAL(ret);
+  //  ret = sscanf_P(cmd, PSTR("%hhu"), &val);
+  //  if (ret == 1)
+  //    {
+  //      // Found a number
+  //      if ((0 < val) && (val <= 255))
+  //        {
+  //          // Sane value
+  //          aFilter = val;
+  //        }
+  //      else
+  //        {
+  //          return ECMD_ERR_PARSE_ERROR;
+  //        }
+  //      ret = snprintf_P(output, len, PSTR("Set new filter param to %d"), aFilter);
+  //
+  //
+  //    }
+  //  else
+  //    {
+  //      ret = snprintf_P(output, len, PSTR("%d"), aFilter);
+  //    }
+  //  return ECMD_FINAL(ret);
 
-    ret = sscanf_P(cmd, PSTR("%hhu"), &tTarget);
-    if (ret == 1)
-      {
-        // Found a number
-        if ((100 < tTarget) && (tTarget < 250))
-          {
-            // Sane value
-            heating_ctrl_params_ram.t_target_room = (int16_t) T_RES(tTarget)/10;
-            eeprom_save(heating_ctrl_params, &heating_ctrl_params_ram,
-                sizeof(heating_ctrl_params_t));
-            eeprom_update_chksum();
+  ret = sscanf_P(cmd, PSTR("%hhu"), &tTarget);
+  if (ret == 1)
+    {
+      // Found a number
+      if ((100 < tTarget) && (tTarget < 250))
+        {
+          // Sane value
+          heating_ctrl_params_ram.t_target_room = (int16_t) T_RES(tTarget)/10;
+          eeprom_save(heating_ctrl_params, &heating_ctrl_params_ram,
+              sizeof(heating_ctrl_params_t));
+          eeprom_update_chksum();
 
-          }
-        else
-          {
-            return ECMD_ERR_PARSE_ERROR;
-          }
-        ret = snprintf_P(output, len, PSTR("Set new target to %d degC*10 (10th of degrees)"), tTarget);
-      }
+        }
+      else
+        {
+          return ECMD_ERR_PARSE_ERROR;
+        }
+      ret = snprintf_P(output, len, PSTR("Set new target to %d degC*10 (10th of degrees)"), tTarget);
+    }
   else
     {
       ret = snprintf_P(output, len, PSTR("%d %d %d %d I%d I%d uR%d uS%d"),
           //heating_ctrl_params_ram.t_target_room,
           sensors[SENSOR_T_ROOM].signalFilt,
-          sensors[SENSOR_T_OUT].signal,
+          sensors[SENSOR_T_OUT].signalFilt,
           sensors[SENSOR_T_RAD].signal,
           sensors[SENSOR_T_RAD].signalFilt,
           heating_ctrl_params_ram.pid_room.I,

@@ -2,10 +2,15 @@
 BASEDIR = ../..
 IDIR =$(BASEDIR)
 CFLAGS= -g -Wattributes -O0 -I$(IDIR) 
+#CFLAGS+=-I/core/host
 CFLAGS+=-I/usr/lib/avr/include
+#CFLAGS+=-I/usr/include/glib-2.0
+#CFLAGS+=-I/usr/lib/i386-linux-gnu/glib-2.0/include
+
 
 OBJS=CU_test1.o
 OBJS+=$(BASEDIR)/services/heating_controller/heating_ctrl.o
+#OBJS+=$(BASEDIR)/core/host/printf.o
 
 USER_OBJS=-lcunit
 

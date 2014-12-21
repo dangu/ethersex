@@ -1,4 +1,4 @@
-//#include "stdio.h"
+//#include <stdio.h>
 #include <CUnit/Basic.h>
 #include "CU_test1.h"
 #include "services/heating_controller/heating_ctrl.h"
@@ -8,13 +8,22 @@
 #include "core/bit-macros.h"
 //#include <avr/pgmspace.h>
 
+
 extern sensor_data_t sensors[N_SENSORS];
 extern heating_ctrl_params_t heating_ctrl_params_ram;
 
+static t_high, t_low; /* Used for faking sensor value */
 
 void eeprom_read_block(){}
+
+/** Stub for reading sensor
+ *
+ * Only the temperaure_high and temperature_low parts are used.
+ */
 int8_t ow_temp_read_scratchpad(ow_rom_code_t * rom, ow_temp_scratchpad_t * scratchpad){
-  return 0;
+  scratchpad->temperature_high=t_high;
+  scratchpad->temperature_low=t_low;
+  return 1;
 }
 
 ow_temp_t
@@ -74,6 +83,8 @@ uint8_t eeprom_get_chksum (void){
  *
  */
 
+#define PSTR(s) s
+
 void setpwm(char channel, uint8_t setval){
 
 }
@@ -81,9 +92,50 @@ int sscanf_P(const char *__buf, const char *__fmt, ...){
   return 0;
 }
 
-int snprintf_P(char *__s, size_t __n, const char *__fmt, ...){
-  return 0;
+int
+snprintf_P (char *s, size_t n, const char *fmt,...)
+{
+  va_list va;
+  va_start (va, fmt);
+  int r = vsnprintf (s, n, fmt, va);
+
+  va_end (va);
+
+  printf(s);
+ // g_free (f);
+
+  return r;
+
 }
+
+void
+foo(char *fmt, ...)
+{
+    va_list ap;
+    int d;
+    char c, *s;
+
+    va_start(ap, fmt);
+    while (*fmt)
+        switch (*fmt++) {
+        case 's':              /* string */
+            s = va_arg(ap, char *);
+            printf("string %s\n", s);
+            break;
+        case 'd':              /* int */
+            d = va_arg(ap, int);
+            printf("int %d\n", d);
+            break;
+        case 'c':              /* char */
+            /* need a cast here since va_arg only
+               takes fully promoted types */
+            c = (char) va_arg(ap, int);
+            printf("char %c\n", c);
+            break;
+        }
+    va_end(ap);
+}
+
 
 int  printf_P(const char *__fmt, ...){
   return 0;
@@ -196,6 +248,30 @@ void test_pid_controller(void){
       //printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
       CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
   }
+
+  /* Test 4:
+   * Test the smallest I-gain of the room controller
+   */
+
+  /* Prerequisites */
+  sensors[SENSOR_T_ROOM].signal = 1700;
+  sensors[SENSOR_T_ROOM].signalFilt = 1700;
+  heating_ctrl_params_ram.pid_room.I = 0;
+  heating_ctrl_params_ram.pid_room.Igain = 1;
+  heating_ctrl_params_ram.pid_room.Pgain = 10;
+  heating_ctrl_params_ram.pid_room.u = 0;
+  heating_ctrl_params_ram.pid_room.uMax = 6000;
+  heating_ctrl_params_ram.pid_room.uMin = 0;
+  heating_ctrl_params_ram.t_target_room = 2100;
+
+  for(cnt=0;cnt<10000;cnt++){
+      pid_controller(&heating_ctrl_params_ram.pid_room,
+          heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
+
+      //printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
+      CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
+  }
+
 }
 
 /* Compare temperature
@@ -315,6 +391,58 @@ void test_filter_ewma()
   CU_ASSERT(filter_ewma(-1, 22, 0) == -1);
 }
 
+/** Test 85degC sensor error
+ *
+ * If the sensor reports 85.00 degC there is probably an error
+ * with the measurement. These values should then be discarded
+ */
+
+void test_85degC_error()
+{
+  int t_to_set = 0;
+  /* Set temp to something else than 85 deg */
+  t_to_set = 12;
+  t_to_set = t_to_set<<4;
+  t_high = (t_to_set>>8)&0xFF;
+  t_low = t_to_set&0xFF;
+  heating_ctrl_init();
+  get_sensor(&sensors[SENSOR_T_ROOM]);
+  CU_ASSERT(sensors[SENSOR_T_ROOM].signal == 1200);
+
+  /* Now set temperature above 85 deg */
+  t_to_set = 89;
+  t_to_set = t_to_set<<4;
+  t_high = (t_to_set>>8)&0xFF;
+  t_low = t_to_set&0xFF;
+  get_sensor(&sensors[SENSOR_T_ROOM]);
+  CU_ASSERT(sensors[SENSOR_T_ROOM].signal == 8900);
+
+  /* When temperature is 85 deg, discard this value */
+  t_to_set = 85;
+  t_to_set = t_to_set<<4;
+  t_high = (t_to_set>>8)&0xFF;
+  t_low = t_to_set&0xFF;
+  get_sensor(&sensors[SENSOR_T_ROOM]);
+  CU_ASSERT(sensors[SENSOR_T_ROOM].signal == 8900);
+
+
+}
+
+/** Test ecmd in heating_controller
+ *
+ */
+
+void test_ecmd()
+{
+  char output[100]; /* The output from the ecmd */
+  uint16_t len; /* The maximum length of the string*/
+
+  len=40;
+  snprintf_P(output, len, "Vanudå?%s%S","Hej", "Hejigen");
+
+  heating_ctrl_onrequest("heating", output, len);
+
+}
 
 /******  End Test functions ********/
 
@@ -337,7 +465,9 @@ int main(){
   if ((NULL == CU_add_test(pSuite, "test of heating_ctrl_init()", test_heating_ctrl_init)) ||
       (NULL == CU_add_test(pSuite, "test of pid_controller()", test_pid_controller)) ||
       (NULL == CU_add_test(pSuite, "test of onewire", test_onewire)) ||
-      (NULL == CU_add_test(pSuite, "test of filter", test_filter_ewma))
+      (NULL == CU_add_test(pSuite, "test of ecmd", test_ecmd)) ||
+      (NULL == CU_add_test(pSuite, "test of filter", test_filter_ewma)) ||
+      (NULL == CU_add_test(pSuite, "test of 85 degC", test_85degC_error))
       //   (NULL == CU_add_test(pSuite, "test of getThreeString()", testGetThreeString)) ||
       //     (NULL == CU_add_test(pSuite, "test of getFourString()", testGetFourString)))
   )
