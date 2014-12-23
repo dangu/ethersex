@@ -102,7 +102,7 @@ snprintf_P (char *s, size_t n, const char *fmt,...)
   va_end (va);
 
   printf(s);
- // g_free (f);
+  // g_free (f);
 
   return r;
 
@@ -111,29 +111,29 @@ snprintf_P (char *s, size_t n, const char *fmt,...)
 void
 foo(char *fmt, ...)
 {
-    va_list ap;
-    int d;
-    char c, *s;
+  va_list ap;
+  int d;
+  char c, *s;
 
-    va_start(ap, fmt);
-    while (*fmt)
-        switch (*fmt++) {
-        case 's':              /* string */
-            s = va_arg(ap, char *);
-            printf("string %s\n", s);
-            break;
-        case 'd':              /* int */
-            d = va_arg(ap, int);
-            printf("int %d\n", d);
-            break;
-        case 'c':              /* char */
-            /* need a cast here since va_arg only
+  va_start(ap, fmt);
+  while (*fmt)
+    switch (*fmt++) {
+    case 's':              /* string */
+      s = va_arg(ap, char *);
+      printf("string %s\n", s);
+      break;
+    case 'd':              /* int */
+      d = va_arg(ap, int);
+      printf("int %d\n", d);
+      break;
+    case 'c':              /* char */
+      /* need a cast here since va_arg only
                takes fully promoted types */
-            c = (char) va_arg(ap, int);
-            printf("char %c\n", c);
-            break;
-        }
-    va_end(ap);
+      c = (char) va_arg(ap, int);
+      printf("char %c\n", c);
+      break;
+    }
+  va_end(ap);
 }
 
 
@@ -210,7 +210,7 @@ void test_pid_controller(void){
    */
   sensors[SENSOR_T_ROOM].signal = 1900;
   sensors[SENSOR_T_ROOM].signalFilt = 1900;
-  heating_ctrl_params_ram.pid_room.I = 4000;
+  heating_ctrl_params_ram.pid_room.I = 3000;
   heating_ctrl_params_ram.pid_room.Igain = 1;
   heating_ctrl_params_ram.pid_room.Pgain = 1;
   heating_ctrl_params_ram.pid_room.u = 0;
@@ -226,7 +226,37 @@ void test_pid_controller(void){
       CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
   }
 
+  /* At the end of the loop, check that the output
+   * is at the maximum value
+   */
+  CU_ASSERT(heating_ctrl_params_ram.pid_room.u == heating_ctrl_params_ram.pid_room.uMax);
+
   /* Test 3:
+   * The controller output shall be limited at uMin
+   */
+  sensors[SENSOR_T_ROOM].signal = 2200;
+  sensors[SENSOR_T_ROOM].signalFilt = 2200;
+  heating_ctrl_params_ram.pid_room.I = 3000;
+  heating_ctrl_params_ram.pid_room.Igain = 1;
+  heating_ctrl_params_ram.pid_room.Pgain = 1;
+  heating_ctrl_params_ram.pid_room.u = 0;
+  heating_ctrl_params_ram.pid_room.uMax = 4000;
+  heating_ctrl_params_ram.pid_room.uMin = 0;
+  heating_ctrl_params_ram.t_target_room = 2000;
+
+  for(cnt=0;cnt<10000;cnt++){
+      pid_controller(&heating_ctrl_params_ram.pid_room,
+          heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
+      CU_ASSERT(heating_ctrl_params_ram.pid_room.u >= heating_ctrl_params_ram.pid_room.uMin);
+  }
+
+  /* At the end of the loop, check that the output
+   * is at the minimum value
+   */
+  CU_ASSERT(heating_ctrl_params_ram.pid_room.u == heating_ctrl_params_ram.pid_room.uMin);
+
+
+  /* Test 4:
    * Test of the I-part of the controller
    */
 
@@ -249,29 +279,29 @@ void test_pid_controller(void){
       CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
   }
 
-  /* Test 4:
+  /* Test 5:
    * Test the smallest I-gain of the room controller
    */
 
   /* Prerequisites */
-  sensors[SENSOR_T_ROOM].signal = 1700;
-  sensors[SENSOR_T_ROOM].signalFilt = 1700;
-  heating_ctrl_params_ram.pid_room.I = 0;
-  heating_ctrl_params_ram.pid_room.Igain = 1;
+  sensors[SENSOR_T_ROOM].signal = 2113;
+  sensors[SENSOR_T_ROOM].signalFilt = sensors[SENSOR_T_ROOM].signal;
+  heating_ctrl_params_ram.pid_room.I = 4000;
+  heating_ctrl_params_ram.pid_room.Igain = 10;
   heating_ctrl_params_ram.pid_room.Pgain = 10;
   heating_ctrl_params_ram.pid_room.u = 0;
   heating_ctrl_params_ram.pid_room.uMax = 6000;
   heating_ctrl_params_ram.pid_room.uMin = 0;
   heating_ctrl_params_ram.t_target_room = 2100;
 
-  for(cnt=0;cnt<10000;cnt++){
+  for(cnt=0;cnt<10;cnt++){
       pid_controller(&heating_ctrl_params_ram.pid_room,
           heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
 
-      //printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
-      CU_ASSERT(heating_ctrl_params_ram.pid_room.u <= heating_ctrl_params_ram.pid_room.uMax);
-  }
+  //    printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
 
+  }
+  CU_ASSERT(heating_ctrl_params_ram.pid_room.u == 3860);
 }
 
 /* Compare temperature
