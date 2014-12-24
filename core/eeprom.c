@@ -187,7 +187,7 @@ eeprom_init (void)
       .Igain=HEATING_CTRL_I_ROOM,
       .uMin=T_RES(15),
       .uMax=MAX_RADTEMP,
-      .I=T_RES(30),
+      .I=T_RES(40L)<<8,
       .u=T_RES(20),
   };
   pid_data_t pid_rad_temp = {
@@ -195,7 +195,7 @@ eeprom_init (void)
       .Igain=HEATING_CTRL_I_RAD,
       .uMin=0,
       .uMax=25500,
-      .I=0,
+      .I=0L<<8,
       .u=0,
   };
   heating_ctrl_params_t heating_ctrl_temp = {

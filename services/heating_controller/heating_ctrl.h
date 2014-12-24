@@ -38,7 +38,7 @@ typedef struct
   int16_t uMax;
 
   // States
-  int16_t I;
+  int32_t I;
   int16_t u;
 
 } pid_data_t;

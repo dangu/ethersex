@@ -284,10 +284,10 @@ void test_pid_controller(void){
    */
 
   /* Prerequisites */
-  sensors[SENSOR_T_ROOM].signal = 2113;
+  sensors[SENSOR_T_ROOM].signal = 2120;
   sensors[SENSOR_T_ROOM].signalFilt = sensors[SENSOR_T_ROOM].signal;
-  heating_ctrl_params_ram.pid_room.I = 4000;
-  heating_ctrl_params_ram.pid_room.Igain = 10;
+  heating_ctrl_params_ram.pid_room.I = 4000<<8;
+  heating_ctrl_params_ram.pid_room.Igain = 25;
   heating_ctrl_params_ram.pid_room.Pgain = 10;
   heating_ctrl_params_ram.pid_room.u = 0;
   heating_ctrl_params_ram.pid_room.uMax = 6000;
@@ -298,10 +298,10 @@ void test_pid_controller(void){
       pid_controller(&heating_ctrl_params_ram.pid_room,
           heating_ctrl_params_ram.t_target_room, &sensors[SENSOR_T_ROOM]);
 
-  //    printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
+      printf("Output: %d\n",heating_ctrl_params_ram.pid_room.u);
 
   }
-  CU_ASSERT(heating_ctrl_params_ram.pid_room.u == 3860);
+  CU_ASSERT(heating_ctrl_params_ram.pid_room.u == 3780);
 }
 
 /* Compare temperature

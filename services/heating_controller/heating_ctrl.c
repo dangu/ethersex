@@ -294,8 +294,8 @@ heating_ctrl_onrequest(char *cmd, char *output, uint16_t len)
           sensors[SENSOR_T_OUT].signalFilt,
           sensors[SENSOR_T_RAD].signal,
           sensors[SENSOR_T_RAD].signalFilt,
-          heating_ctrl_params_ram.pid_room.I,
-          heating_ctrl_params_ram.pid_rad.I,
+          (int16_t)(heating_ctrl_params_ram.pid_room.I>>8),
+          (int16_t)(heating_ctrl_params_ram.pid_rad.I>>8),
           heating_ctrl_params_ram.pid_room.u,
           heating_ctrl_params_ram.pid_rad.u);
     }
@@ -321,10 +321,10 @@ pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
   P = e * pPtr->Pgain;
   ctrl_printf("P=%d ", P);
 
-  pPtr->I = pPtr->I + (e * pPtr->Igain)/100;
-  ctrl_printf("I=%d ", pPtr->I);
+  pPtr->I = pPtr->I + (e * pPtr->Igain);
+  ctrl_printf("I=%d ", (int16_t)(pPtr->I>>8));
 
-  u = (P + pPtr->I);
+  u = (P + (pPtr->I>>8));
   ctrl_printf("u=%d ", u);
   ctrl_printf("uMax=%d ", pPtr->uMax);
 
@@ -342,8 +342,8 @@ pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
       pPtr->u = u;
     }
 
-  pPtr->I = pPtr->I - (u - pPtr->u);
-  ctrl_printf("Ilim=%d\n", pPtr->I);
+  pPtr->I = pPtr->I - ((int32_t)(u - pPtr->u)<<8);
+  ctrl_printf("Ilim=%d\n", (int16_t)(pPtr->I>>8));
 
   return pPtr->u;
 }
