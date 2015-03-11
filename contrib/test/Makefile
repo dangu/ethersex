@@ -1,7 +1,7 @@
 # Includes
 BASEDIR = ../..
 IDIR =$(BASEDIR)
-CFLAGS= -g -Wattributes -O0 -I$(IDIR) 
+CFLAGS= -g -Wattributes -funsigned-bitfields -O0 -I$(IDIR) 
 #CFLAGS+=-I/core/host
 CFLAGS+=-I/usr/lib/avr/include
 #CFLAGS+=-I/usr/include/glib-2.0

@@ -438,7 +438,11 @@ parse_cmd_onewire_get(char *cmd, char *output, uint16_t len)
 
     debug_printf("successfully read scratchpad\n");
     ow_temp_t temp = ow_temp_normalize(&rom, &sp);
-    ret = itoa_fixedpoint(temp.val, temp.twodigits + 1, output, len);
+
+    /* When -funsigned-bitfields is given as compiler argument,
+     * negative temperatures are not working. The 15th bit is thus copied to the 16th
+     * position to get the sign right. This fixes the negative temperature issue #379 */
+    ret = itoa_fixedpoint(temp.val&0x4000?(0x8000|temp.val):temp.val, temp.twodigits + 1, output, len);
     debug_printf("temperature: %s\n", output);
 
 #ifdef ONEWIRE_DS2502_SUPPORT

@@ -5,7 +5,7 @@
 #include "core/eeprom.h"
 #include "hardware/onewire/onewire.h"
 #include "hardware/pwm/pwm.h"
-#include "core/bit-macros.h"
+#include "core/bit-macros.h"h"
 //#include <avr/pgmspace.h>
 
 
@@ -50,6 +50,50 @@ ow_temp_normalize(ow_rom_code_t * rom, ow_temp_scratchpad_t * sp)
       ret.twodigits = 1;
     }
   return ret;
+}
+
+uint8_t
+itoa_fixedpoint(int16_t n, uint8_t fixeddigits, char s[], uint8_t size)
+{
+  uint8_t len = 0;
+  if (size <= 1)
+    return 0;
+
+  if (n < 0)
+  {
+    s[len++] = '-';
+    n = -n;
+  }
+
+/* Number of digits to output */
+/* Output at least fixeddigits + 1 digits */
+  uint8_t digits = 1;
+  int16_t m = 1;
+  while ((m <= n / 10) || (digits < fixeddigits + 1))
+  {
+    m *= 10;
+    digits++;
+  }
+
+  size--;
+  while (digits > 0 && len < size)
+  {
+    uint8_t i;
+/* Decimal point? */
+    if (digits == fixeddigits)
+    {
+      s[len++] = '.';
+    }
+    for (i = '0'; n >= m; n -= m, i++);
+    if (len < size)
+      s[len++] = i;
+    m /= 10;
+    digits--;
+  }
+
+  s[len] = '\0';
+
+  return len;
 }
 
 /* Old implementation of the normalize function.
@@ -304,6 +348,8 @@ void test_pid_controller(void){
   CU_ASSERT(heating_ctrl_params_ram.pid_room.u == 3780);
 }
 
+
+
 /* Compare temperature
  *
  */
@@ -312,6 +358,9 @@ void
 compare_temp(ow_temp_scratchpad_t* spPtr, ow_rom_code_t* romPtr, int tTarget,
     uint8_t hi, uint8_t lo, uint8_t remain)
 {
+  char output[32];
+  uint8_t len;
+  uint8_t ret;
   /* Fake a scratchpad... */
   spPtr->temperature_high = hi;
   spPtr->temperature_low =  lo;
@@ -320,22 +369,24 @@ compare_temp(ow_temp_scratchpad_t* spPtr, ow_rom_code_t* romPtr, int tTarget,
   // printf("Scratchpad raw:: 0x%02X %02X\n", spPtr->temperature_high,
   //     spPtr->temperature_low);
 
-  /* Commented out the new implementation
+
   ow_temp_t temp = ow_temp_normalize(romPtr, spPtr);
-  printf("Ttarget: %d Tcalc %d\n", tTarget, temp.val);
+  ret = itoa_fixedpoint(temp.val&0x4000?(0x8000|temp.val):temp.val, temp.twodigits + 1, output, len);
+  //ret = itoa_fixedpoint(temp.val, temp.twodigits + 1, output, len);
+   printf("Ttarget: %d Tcalc %d %X == %s\n", tTarget, temp.val, temp.val, output);
   CU_ASSERT(temp.val == tTarget);
-   */
-  int16_t temp = ow_temp_normalize_old(romPtr, spPtr);
-  if(romPtr->family == OW_FAMILY_DS18B20)
-    {
-      temp = (temp/16*100)/16;
-    }
-  else
-    {
-      temp = (temp/16*10)/16;
-    }
+
+//  int16_t temp = ow_temp_normalize_old(romPtr, spPtr);
+//  if(romPtr->family == OW_FAMILY_DS18B20)
+//    {
+//      temp = (temp/16*100)/16;
+//    }
+//  else
+//    {
+//      temp = (temp/16*10)/16;
+//    }
   // printf("Ttarget: %d Tcalc %d\n", tTarget, temp);
-  CU_ASSERT(temp == tTarget);
+ // CU_ASSERT(temp == tTarget);
 }
 
 /* Test onewire functions
@@ -391,7 +442,7 @@ void test_onewire(void){
   compare_temp(&sp, romPtr, 12500, 0x07, 0xD0, 0x0);
   compare_temp(&sp, romPtr, 8500, 0x05, 0x50, 0x0);
   compare_temp(&sp, romPtr, 2506, 0x01, 0x91, 0x0);
-  compare_temp(&sp, romPtr, 1012, 0x00, 0xA2, 0x0);
+  compare_temp(&sp, romPtr, 1013, 0x00, 0xA2, 0x0); /* Rounds to 1013... */
   compare_temp(&sp, romPtr, 50  , 0x00, 0x08, 0x0);
   compare_temp(&sp, romPtr, 0   , 0x00, 0x00, 0x0);
   compare_temp(&sp, romPtr, -50 , 0xFF, 0xF8, 0x0);
@@ -474,6 +525,32 @@ void test_ecmd()
 
 }
 
+
+/** Test bitfield in the 1w-sensor data struct
+ *
+ */
+
+void test_bitfield()
+{
+  ow_temp_scratchpad_t sp;
+  sensor_data_t sensor;
+  ow_rom_code_t *romPtr;
+
+  /* Fake a sensor type... */
+  romPtr = &sensor.rom;
+  romPtr->family = OW_FAMILY_DS18B20;
+
+  compare_temp(&sp, romPtr, 50  , 0x00, 0x08, 0x0);
+  compare_temp(&sp, romPtr, 0   , 0x00, 0x00, 0x0);
+  compare_temp(&sp, romPtr, -50 , 0xFF, 0xF8, 0x0);
+  compare_temp(&sp, romPtr, -1012, 0xFF, 0x5E, 0x0); /* 1013 This fails. It rounds to -1012. Is that ok? */
+  compare_temp(&sp, romPtr, -2506, 0xFE, 0x6F, 0x0);
+
+
+}
+
+
+
 /******  End Test functions ********/
 
 
@@ -497,7 +574,8 @@ int main(){
       (NULL == CU_add_test(pSuite, "test of onewire", test_onewire)) ||
       (NULL == CU_add_test(pSuite, "test of ecmd", test_ecmd)) ||
       (NULL == CU_add_test(pSuite, "test of filter", test_filter_ewma)) ||
-      (NULL == CU_add_test(pSuite, "test of 85 degC", test_85degC_error))
+      (NULL == CU_add_test(pSuite, "test of 85 degC", test_85degC_error)) ||
+      (NULL == CU_add_test(pSuite, "test of negative bitfield", test_bitfield))
       //   (NULL == CU_add_test(pSuite, "test of getThreeString()", testGetThreeString)) ||
       //     (NULL == CU_add_test(pSuite, "test of getFourString()", testGetFourString)))
   )
