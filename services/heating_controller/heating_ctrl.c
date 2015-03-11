@@ -194,21 +194,21 @@ heating_ctrl_controller(void)
   for (i = 0; i < N_SENSORS; i++)
     ret = get_sensor(&sensors[i]);
 
-  /*
-   * Do not try to set a radiator temp higher than the maximum
-   * available (especially if the accumulator tanks are empty). This should
-   * prevent windup and 70 deg temperature after the next fire
-   self.pidRoom.uMax = min(self.maxRadtemp, tRadMeasured + self.maxRadtempDiff)
-   */
-  tRadMaxDynamic = sensors[SENSOR_T_RAD].signalFilt + MAX_RADTEMPDIFF;
-  if (MAX_RADTEMP > tRadMaxDynamic)
-    {
-      heating_ctrl_params_ram.pid_room.uMax = tRadMaxDynamic;
-    }
-  else
-    {
-      heating_ctrl_params_ram.pid_room.uMax = MAX_RADTEMP;
-    }
+//  /*
+//   * Do not try to set a radiator temp higher than the maximum
+//   * available (especially if the accumulator tanks are empty). This should
+//   * prevent windup and 70 deg temperature after the next fire
+//   self.pidRoom.uMax = min(self.maxRadtemp, tRadMeasured + self.maxRadtempDiff)
+//   */
+//  tRadMaxDynamic = sensors[SENSOR_T_RAD].signalFilt + MAX_RADTEMPDIFF;
+//  if (MAX_RADTEMP > tRadMaxDynamic)
+//    {
+//      heating_ctrl_params_ram.pid_room.uMax = tRadMaxDynamic;
+//    }
+//  else
+//    {
+//      heating_ctrl_params_ram.pid_room.uMax = MAX_RADTEMP;
+//    }
 
   // PID room temp
   tTargetRad =
@@ -312,7 +312,7 @@ pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
 {
 
   //         self.I = self.I + self.I_GAIN*err*dt
-  int16_t e, P, u;
+  int32_t e, P, u;
 
   e = tTarget - sensorPtr->signalFilt;
   HEATINGCTRLDEBUG("PID: e=%d-%d=%d sens/100=%d ", tTarget, sensorPtr->signalFilt,
@@ -325,7 +325,7 @@ pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
   ctrl_printf("I=%d ", (int16_t)(pPtr->I>>8));
 
   u = (P + (pPtr->I>>8));
-  ctrl_printf("u=%d ", u);
+  ctrl_printf("u=%d ", (int16_t)u);
   ctrl_printf("uMax=%d ", pPtr->uMax);
 
 
@@ -339,10 +339,10 @@ pid_controller(pid_data_t * pPtr, int16_t tTarget, sensor_data_t * sensorPtr)
     }
   else
     {
-      pPtr->u = u;
+      pPtr->u = (int16_t)u;
     }
 
-  pPtr->I = pPtr->I - ((int32_t)(u - pPtr->u)<<8);
+  pPtr->I = pPtr->I - ((int32_t)(u - pPtr->u)<<6); /* TODO: This anti-windup was <<8 and should be checked */
   ctrl_printf("Ilim=%d\n", (int16_t)(pPtr->I>>8));
 
   return pPtr->u;

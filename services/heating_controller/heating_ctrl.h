@@ -76,7 +76,7 @@ typedef struct
 #define T_RES(x)  (x*100)        // Temperature resolution
 
 #define MAX_RADTEMP T_RES(60)   // Do not try to set radiator temp higher than this
-#define MAX_RADTEMPDIFF T_RES(5)        // Do not try to increase radiator temp higher than this
+//#define MAX_RADTEMPDIFF T_RES(5)        // Do not try to increase radiator temp higher than this
 
 
 int16_t heating_ctrl_onrequest(char *cmd, char *output, uint16_t len);
